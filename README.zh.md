@@ -10,6 +10,7 @@
 ## 目录
 
 - [功能特点](#🚀-功能特点)
+- [技术栈](#🚀-技术栈)
 - [安装指南](#🛠️-安装指南)
 - [使用说明](#🎯-使用说明)
 - [配置方式](#⚙️-配置方式)
@@ -37,73 +38,76 @@
 
 ---
 
+## 🚀 技术栈
+
+### 后端
+- **框架:** ASP.NET Core 8.0
+- **数据库:** SQL Server
+- **认证:** JWT Bearer, Google Authentication
+- **云服务:** Cloudinary, Firebase (Admin, Database), Google Cloud Storage
+- **电子邮件:** MailKit
+- **缓存:** Redis
+- **机器学习:** Microsoft.ML
+- **API文档:** Swashbuckle (Swagger)
+- **支付:** VNPAY
+
+### 前端
+- **框架:** Vue.js 3
+- **构建工具:** Vite
+- **状态管理:** Pinia
+- **路由:** Vue Router
+- **UI框架/库:** Bootstrap 5, jQuery, SweetAlert2, Swiper
+- **HTTP客户端:** Axios
+- **图表:** Chart.js
+
+---
+
 ## 🛠️ 安装指南
 
 **系统需求：**
-- Windows 10/11
-- PowerShell 5.1或更高版本
+- Windows 10/11 或 Linux/macOS
 - .NET 8 SDK
 - Node.js（建议使用LTS版本）
-- Vue CLI（`npm install -g @vue/cli`）
 - SQL Server或SQL Server Express/LocalDB
 
 **操作步骤：**
 
-```powershell
+```bash
 # 1. 克隆仓库
-git clone <仓库地址>  # 替换为你的仓库链接
+git clone <仓库地址> # 替换为你的仓库链接
 cd EcommerceShop
 
-# 后端API
+# 2. 后端设置 - API
 cd APIClothesEcommerceShop/APIClothesEcommerceShop
-# 配置数据库连接：
-# 编辑appsettings.json文件，填写你的SQL Server连接字符串
-# 例：
+# 在 `appsettings.json` 中配置数据库连接
+# 示例:
 # "EcommerceShopConnect_Dot": "Server=.;Database=EcommerceShopDb;Trusted_Connection=True;TrustServerCertificate=True;"
-# 保存文件
-
-# 恢复依赖并更新数据库
 dotnet restore
 dotnet ef database update
-
-# 运行后端API
 dotnet run
-# API将访问地址为：https://localhost:7217/swagger 或 http://localhost:7218/swagger
+# API将通过 https://localhost:7217/swagger 或 http://localhost:7218/swagger 访问
 
-# 前端界面
+# 3. 前端设置 - 用户界面
 cd ../../ECOMMERCESHOPUXUI/EcommerceProject
 npm install
 npm run dev
-# 访问地址：http://localhost:5173
+# 用户界面将通过 http://localhost:5173 访问
 ```
 
 ---
 
 ## 🎯 使用说明
 
-前后端服务启动后：
+当后端和前端服务都在运行时:
 
-- 打开浏览器，访问 [http://localhost:5173](http://localhost:5173)
-- 使用界面浏览商品、注册/登录、添加到购物车、使用VNPAY结账
-
-**主要功能：**
-
-- 商品浏览与搜索
-- 购物车管理和结算
-- 用户注册、登录与个人资料管理
-- AI虚拟试穿商品对比
-- 转盘抽奖优惠券
-- 实时聊天机器人支持
-- 查看订单历史与近期活动
-- 后台商品、订单、用户和数据分析管理
+- 打开浏览器并转到 [http://localhost:5173](http://localhost:5173)
+- 使用直观的用户界面浏览产品、注册/登录、将商品添加到购物车并使用VNPAY结账。
 
 ---
 
 ## ⚙️ 配置方式
 
-- 在环境变量（`.env`文件）中设置Cloudinary、Gemini AI、Firebase、VNPAY等服务的API密钥
-- 在`appsettings.json`中更新数据库连接字符串
-- 配置第三方API接口，用于AI、支付和邮件通知
+项目需要配置环境变量才能正常工作。有关如何配置环境变量和获取API密钥的详细信息，请参阅[详细配置指南](./docs/CONFIGURATION.zh.md)。
 
 ---
 

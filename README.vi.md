@@ -10,6 +10,7 @@ Nền tảng thương mại điện tử toàn diện dành cho việc bán qu�
 ## Mục Lục
 
 - [Tính Năng](#🚀-tính-năng)
+- [Công nghệ sử dụng](#🚀-công-nghệ-sử-dụng)
 - [Cài Đặt](#🛠️-cài-đặt)
 - [Sử Dụng](#🎯-sử-dụng)
 - [Cấu Hình](#⚙️-cấu-hình)
@@ -37,44 +38,60 @@ Nền tảng thương mại điện tử toàn diện dành cho việc bán qu�
 
 ---
 
+## 🚀 Công nghệ sử dụng
+
+### Backend
+- **Framework:** ASP.NET Core 8.0
+- **Database:** SQL Server
+- **Authentication:** JWT Bearer, Google Authentication
+- **Cloud Services:** Cloudinary, Firebase (Admin, Database), Google Cloud Storage
+- **Email:** MailKit
+- **Caching:** Redis
+- **Machine Learning:** Microsoft.ML
+- **API Documentation:** Swashbuckle (Swagger)
+- **Payment:** VNPAY
+
+### Frontend
+- **Framework:** Vue.js 3
+- **Build Tool:** Vite
+- **State Management:** Pinia
+- **Routing:** Vue Router
+- **UI Frameworks/Libraries:** Bootstrap 5, jQuery, SweetAlert2, Swiper
+- **HTTP Client:** Axios
+- **Charts:** Chart.js
+
+---
+
 ## 🛠️ Cài Đặt
 
 **Yêu cầu hệ thống**:
-- Windows 10/11
-- PowerShell 5.1 trở lên
+- Windows 10/11 hoặc Linux/macOS
 - .NET 8 SDK
 - Node.js (phiên bản LTS khuyên dùng)
-- Vue CLI (`npm install -g @vue/cli`)
 - SQL Server hoặc SQL Server Express/LocalDB
 
 **Các bước thực hiện**:
 
-```powershell
+```bash
 # 1. Clone kho chứa mã nguồn
-git clone <url_kh_oọdọ>  # Thay thế bằng URL repo của bạn
+git clone <URL_REPOSITORY> # Thay thế bằng URL repo của bạn
 cd EcommerceShop
 
-# Backend - API
+# 2. Cài đặt Backend - API
 cd APIClothesEcommerceShop/APIClothesEcommerceShop
-# Cấu hình kết nối Database:
-# Mở file appsettings.json chỉnh sửa chuỗi kết nối SQL Server của bạn
+# Cấu hình kết nối Database trong `appsettings.json`
 # Ví dụ:
 # "EcommerceShopConnect_Dot": "Server=.;Database=EcommerceShopDb;Trusted_Connection=True;TrustServerCertificate=True;"
-# Lưu file
-
-# Khôi phục thư viện và cập nhật database
 dotnet restore
 dotnet ef database update
-
-# Chạy API backend
 dotnet run
 # API sẽ có thể truy cập tại https://localhost:7217/swagger hoặc http://localhost:7218/swagger
 
-# Frontend - Giao diện người dùng
+# 3. Cài đặt Frontend - Giao diện người dùng
 cd ../../ECOMMERCESHOPUXUI/EcommerceProject
 npm install
 npm run dev
-# Truy cập tại http://localhost:5173
+# Giao diện người dùng sẽ có thể truy cập tại http://localhost:5173
 ```
 
 ---
@@ -86,24 +103,33 @@ Sau khi cả hai dịch vụ backend và frontend đều hoạt động:
 - Mở trình duyệt truy cập [http://localhost:5173](http://localhost:5173)
 - Sử dụng giao diện thân thiện để duyệt sản phẩm, đăng ký/đăng nhập, thêm sản phẩm vào giỏ, thanh toán qua VNPAY.
 
-**Các chức năng chính:**
-
-- Duyệt và tìm kiếm sản phẩm
-- Quản lý giỏ hàng và thanh toán
-- Đăng ký, đăng nhập, quản lý hồ sơ cá nhân
-- So sánh sản phẩm với thử ảo AI
-- Vòng quay may mắn mã giảm giá
-- Chatbot hỗ trợ trực tuyến
-- Xem lịch sử đơn hàng và hoạt động gần nhất
-- Quản trị sản phẩm, đơn hàng, người dùng, phân tích dữ liệu
-
 ---
 
 ## ⚙️ Cấu Hình
 
-- Cấu hình API keys cho dịch vụ như Cloudinary, Gemini AI, Firebase, VNPAY trong các biến môi trường (`.env`)
-- Cập nhật chuỗi kết nối database trong `appsettings.json`
-- Cấu hình API của bên thứ ba cho AI, thanh toán, email, gửi thông báo
+Dự án yêu cầu cấu hình các biến môi trường để hoạt động chính xác. Để biết chi tiết về cách cấu hình biến môi trường và lấy API keys, vui lòng tham khảo [Hướng dẫn Cấu hình chi tiết](./docs/CONFIGURATION.md).
+
+
+### Backend (`appsettings.json`)
+Cần cập nhật các thông tin nhạy cảm trong `appsettings.json` hoặc sử dụng User Secrets cho môi trường phát triển.
+- `ConnectionStrings:EcommerceShopConnect_Dot`: Chuỗi kết nối đến SQL Server.
+- `CloudinarySettings`: API keys cho dịch vụ Cloudinary.
+- `Firebase`: API key cho Firebase.
+- `Google`: Client ID và Client Secret cho Google Authentication.
+- `VNPAY`: TmnCode và HashSecret cho cổng thanh toán VNPAY.
+- `MailSettings`: Cấu hình SMTP để gửi email.
+- `Gemini:ApiKey`: API key cho Gemini AI.
+
+### Frontend (`.env`)
+Tạo file `.env` trong thư mục `ECOMMERCESHOPUXUI/EcommerceProject` và thêm các biến sau:
+- `VITE_API_URL`: URL của backend API (ví dụ: `https://localhost:7217`).
+- `VITE_FIREBASE_API_KEY`: API key cho Firebase.
+- `VITE_FIREBASE_AUTH_DOMAIN`: Domain xác thực của Firebase.
+- `VITE_FIREBASE_PROJECT_ID`: Project ID của Firebase.
+- `VITE_FIREBASE_STORAGE_BUCKET`: Storage Bucket của Firebase.
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`: Sender ID của Firebase Messaging.
+- `VITE_FIREBASE_APP_ID`: App ID của Firebase.
+- `VITE_RECAPTCHA_SITE_KEY`: Site key cho Google reCAPTCHA.
 
 ---
 

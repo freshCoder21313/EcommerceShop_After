@@ -10,6 +10,7 @@ A comprehensive e-commerce platform for selling clothes online, built with a mod
 ## Table of Contents
 
 - [Features](#🚀-features)
+- [Tech Stack](#🚀-tech-stack)
 - [Installation](#🛠️-installation)
 - [Usage](#🎯-usage)
 - [Configuration](#⚙️-configuration)
@@ -37,44 +38,60 @@ A comprehensive e-commerce platform for selling clothes online, built with a mod
 
 ---
 
+## 🚀 Tech Stack
+
+### Backend
+- **Framework:** ASP.NET Core 8.0
+- **Database:** SQL Server
+- **Authentication:** JWT Bearer, Google Authentication
+- **Cloud Services:** Cloudinary, Firebase (Admin, Database), Google Cloud Storage
+- **Email:** MailKit
+- **Caching:** Redis
+- **Machine Learning:** Microsoft.ML
+- **API Documentation:** Swashbuckle (Swagger)
+- **Payment:** VNPAY
+
+### Frontend
+- **Framework:** Vue.js 3
+- **Build Tool:** Vite
+- **State Management:** Pinia
+- **Routing:** Vue Router
+- **UI Frameworks/Libraries:** Bootstrap 5, jQuery, SweetAlert2, Swiper
+- **HTTP Client:** Axios
+- **Charts:** Chart.js
+
+---
+
 ## 🛠️ Installation
 
 **System Requirements**:
-- Windows 10/11
-- PowerShell 5.1 or higher
+- Windows 10/11 or Linux/macOS
 - .NET 8 SDK
 - Node.js (LTS version recommended)
-- Vue CLI (`npm install -g @vue/cli`)
 - SQL Server or SQL Server Express/LocalDB
 
 **Steps**:
 
-```powershell
+```bash
 # 1. Clone the repository
-git clone <repository_url> # Replace with your repository URL
+git clone <REPOSITORY_URL> # Replace with your repository URL
 cd EcommerceShop
 
-# Backend - API Service
+# 2. Backend Setup - API
 cd APIClothesEcommerceShop/APIClothesEcommerceShop
-# Configure Database Connection:
-# Edit appsettings.json to set your SQL Server connection string
+# Configure the Database connection in `appsettings.json`
 # Example:
 # "EcommerceShopConnect_Dot": "Server=.;Database=EcommerceShopDb;Trusted_Connection=True;TrustServerCertificate=True;"
-# Save the file
-
-# Restore dependencies and update database
 dotnet restore
 dotnet ef database update
-
-# Run the backend API
 dotnet run
-# API will be accessible at https://localhost:7217/swagger or http://localhost:7218/swagger
+# The API will be accessible at https://localhost:7217/swagger or http://localhost:7218/swagger
 
-# Frontend - User Interface
+# 3. Frontend Setup - User Interface
 cd ../../ECOMMERCESHOPUXUI/EcommerceProject
 npm install
 npm run dev
-# Access at http://localhost:5173
+# The user interface will be accessible at http://localhost:5173
 ```
 
 ---
@@ -86,24 +103,11 @@ Once both backend and frontend services are running:
 - Open your browser and go to [http://localhost:5173](http://localhost:5173)
 - Use the intuitive UI to browse products, register/login, add items to the cart, and check out with VNPAY.
 
-**Main features include:**
-
-- Product browsing and searching
-- Shopping cart management and checkout
-- User registration, login, profile management
-- Product comparison with AI-powered virtual try-on
-- Lucky wheel coupons for discounts
-- Real-time chatbot support
-- Viewing past orders and recent activity
-- Admin management of products, orders, users, and analytics
-
 ---
 
 ## ⚙️ Configuration
 
-- Set API keys for services like Cloudinary, Gemini AI, Firebase, and VNPAY in your environment variables (`.env`)
-- Update database connection strings in `appsettings.json`
-- Configure third-party API integrations for AI, payments, and email notifications
+The project requires environment variables to be configured to work correctly. For details on how to configure environment variables and get API keys, please refer to the [Detailed Configuration Guide](./docs/CONFIGURATION.en.md).
 
 ---
 
