@@ -1,15 +1,14 @@
 ﻿using System.Reflection;
 using System.Text;
-using APIClothesEcommerceShop.Controllers;
 using APIClothesEcommerceShop.Data;
 using APIClothesEcommerceShop.Repositories.Account;
 using APIClothesEcommerceShop.Repositories.Address;
 using APIClothesEcommerceShop.Repositories.Cart;
 using APIClothesEcommerceShop.Repositories.Cart_DetailCombo;
-using APIClothesEcommerceShop.Repositories.Category;
 using APIClothesEcommerceShop.Repositories.CategoryDetails;
 using APIClothesEcommerceShop.Repositories.Combo;
 using APIClothesEcommerceShop.Repositories.Combos;
+using APIClothesEcommerceShop.Repositories.Contact;
 using APIClothesEcommerceShop.Repositories.Coupon;
 using APIClothesEcommerceShop.Repositories.Customer;
 using APIClothesEcommerceShop.Repositories.DbInitializer;
@@ -29,19 +28,16 @@ using APIClothesEcommerceShop.Repositories.Statistics;
 using APIClothesEcommerceShop.Repositories.Token;
 using APIClothesEcommerceShop.Repositories.UnitOfWork;
 using APIClothesEcommerceShop.Repositories.ViewHistory;
+using APIClothesEcommerceShop.Repositories.VNPAY;
 using APIClothesEcommerceShop.Services;
 using APIClothesEcommerceShop.Services.EmailService;
 using APIClothesEcommerceShop.Services.EmailService.GoogleSenderService;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QuestPDF.Infrastructure;
-using VNPAY.NET;
-using APIClothesEcommerceShop.Repositories.Contact;
-using APIClothesEcommerceShop.Repositories.VNPAY;
 var builder = WebApplication.CreateBuilder(args);
 QuestPDF.Settings.License = LicenseType.Community;
 // Configure Kestrel to support both HTTP and HTTPS
@@ -69,7 +65,7 @@ EcommerceShopConnect_Dot - Data Source=.;
  */
 builder.Services.AddDbContext<EcommerceShopContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("EcommerceShopConnect_TD"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("EcommerceShopConnect_Dot"));
 });
 
 // Add services to the container.
