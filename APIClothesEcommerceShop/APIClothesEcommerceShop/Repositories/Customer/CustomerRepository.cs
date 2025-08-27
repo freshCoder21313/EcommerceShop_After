@@ -3,6 +3,7 @@ using APIClothesEcommerceShop.DTO;
 using APIClothesEcommerceShop.DTO.Customer;
 using APIClothesEcommerceShop.Models;
 using APIClothesEcommerceShop.Repositories.Customer;
+using APIClothesEcommerceShop.Services.CloudinaryService; // Added for Cloudinary
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -13,11 +14,13 @@ public class CustomerRepository : ICustomerRepository
 {
     private readonly EcommerceShopContext _context;
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly ICloudinaryService _cloudinaryService; // Added for Cloudinary
 
-    public CustomerRepository(EcommerceShopContext context, IWebHostEnvironment webHostEnvironment)
+    public CustomerRepository(EcommerceShopContext context, IWebHostEnvironment webHostEnvironment, ICloudinaryService cloudinaryService)
     {
         _context = context;
         _webHostEnvironment = webHostEnvironment;
+        _cloudinaryService = cloudinaryService; // Added for Cloudinary
     }
 
     public async Task<List<CustomerDto>> GetAllCustomersAsync(int pageSize, int pageNumber, string hoTen, string gioiTinh, string tinhTrang)
@@ -187,19 +190,11 @@ public class CustomerRepository : ICustomerRepository
         string hashedPassword = HashPassword(customerDto.MatKhau);
         customerDto.MatKhau = hashedPassword;
 
-        // Lưu hình ảnh và chỉ lưu đường dẫn tương đối
-        string filePath = null;
+        // Lưu hình ảnh vào Cloudinary
+        string imageUrl = null;
         if (customerDto.HinhDaiDien != null)
         {
-            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "AnhKhachHang");
-            Directory.CreateDirectory(uploadsFolder);
-            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(customerDto.HinhDaiDien.FileName);
-            string fullPath = Path.Combine(uploadsFolder, fileName);
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await customerDto.HinhDaiDien.CopyToAsync(stream);
-            }
-            filePath = $"/wwwroot/AnhKhachHang/{fileName}";
+            imageUrl = await _cloudinaryService.UploadImageAsync(customerDto.HinhDaiDien, "customer-profiles");
         }
 
         var customer = new Khachhang
@@ -213,7 +208,7 @@ public class CustomerRepository : ICustomerRepository
             Email = customerDto.Email,
             TenTaiKhoan = customerDto.TenTaiKhoan,
             MatKhau = customerDto.MatKhau,
-            HinhDaiDien = filePath,
+            HinhDaiDien = imageUrl, // Store Cloudinary URL
             NgayTao = DateTime.Now,
             TinhTrang = "Đang hoạt động",
             IsActive = true
@@ -392,35 +387,34 @@ public class CustomerRepository : ICustomerRepository
         // Xử lý hình ảnh
         if (customerDto.HinhDaiDien != null)
         {
+            // Delete old image from Cloudinary if it exists
             if (!string.IsNullOrEmpty(existingCustomer.HinhDaiDien))
             {
-                string oldImagePath = existingCustomer.HinhDaiDien.Replace("/wwwroot", "");
-                string fullOldPath = Path.Combine(_webHostEnvironment.WebRootPath, oldImagePath.TrimStart('/'));
-
-                if (System.IO.File.Exists(fullOldPath))
+                try
                 {
-                    try
+                    var uri = new Uri(existingCustomer.HinhDaiDien);
+                    var segments = uri.Segments;
+                    int uploadIndex = Array.IndexOf(segments, "upload/");
+                    if (uploadIndex != -1 && segments.Length > uploadIndex + 1)
                     {
-                        System.IO.File.Delete(fullOldPath);
+                        string publicIdWithExtension = string.Join("", segments.Skip(uploadIndex + 1));
+                        string publicId = Path.GetFileNameWithoutExtension(publicIdWithExtension);
+                        if (publicIdWithExtension.Contains("/"))
+                        {
+                            publicId = publicIdWithExtension.Substring(0, publicIdWithExtension.LastIndexOf("."));
+                        }
+                        _cloudinaryService.DeleteImageAsync(publicId).Wait();
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Lỗi khi xóa hình ảnh cũ: {ex.Message}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi khi xóa hình ảnh cũ từ Cloudinary: {ex.Message}");
                 }
             }
 
-            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "AnhKhachHang");
-            Directory.CreateDirectory(uploadsFolder);
-            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(customerDto.HinhDaiDien.FileName);
-            string fullPath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await customerDto.HinhDaiDien.CopyToAsync(stream);
-            }
-
-            existingCustomer.HinhDaiDien = $"/AnhKhachHang/{fileName}";
+            // Upload new image to Cloudinary
+            string newImageUrl = await _cloudinaryService.UploadImageAsync(customerDto.HinhDaiDien, "customer-profiles");
+            existingCustomer.HinhDaiDien = newImageUrl;
         }
 
         _context.Khachhangs.Update(existingCustomer);

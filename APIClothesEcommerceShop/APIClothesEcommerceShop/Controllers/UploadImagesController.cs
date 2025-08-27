@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using APIClothesEcommerceShop.Services.CloudinaryService;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APIClothesEcommerceShop.Controllers
@@ -7,29 +8,29 @@ namespace APIClothesEcommerceShop.Controllers
     [ApiController]
     public class UploadImagesController : ControllerBase
     {
+        private readonly ICloudinaryService _cloudinaryService;
+
+        public UploadImagesController(ICloudinaryService cloudinaryService)
+        {
+            _cloudinaryService = cloudinaryService;
+        }
+
         [HttpPost]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
             try
             {
-                // 1. Kiểm tra file có tồn tại không
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest(new { message = "Không có file được tải lên." });
                 }
-                var folderPath = Path.Combine("wwwroot/HinhAnh/Products");
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-                var filePath = Path.Combine(folderPath, file.FileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
+
+                var imageUrl = await _cloudinaryService.UploadImageAsync(file, "products");
+
                 return Ok(new
                 {
-                    Success = true
+                    Success = true,
+                    ImageUrl = imageUrl
                 });
             }
             catch (Exception ex)

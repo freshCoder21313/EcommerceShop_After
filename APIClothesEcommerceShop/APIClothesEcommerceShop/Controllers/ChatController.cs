@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using APIClothesEcommerceShop.Data;
 using APIClothesEcommerceShop.Repositories.Staff;
+using APIClothesEcommerceShop.Services.CloudinaryService; // Added for Cloudinary
 
 namespace APIClothesEcommerceShop.Controllers
 {
@@ -17,10 +18,13 @@ namespace APIClothesEcommerceShop.Controllers
     {
         private readonly EcommerceShopContext _db;
         private readonly IStaffRepository _staffRepository;
-        public ChatController(EcommerceShopContext db, IStaffRepository staffRepository)
+        private readonly ICloudinaryService _cloudinaryService; // Added for Cloudinary
+
+        public ChatController(EcommerceShopContext db, IStaffRepository staffRepository, ICloudinaryService cloudinaryService) // Modified constructor
         {
             _db = db;
             _staffRepository = staffRepository;
+            _cloudinaryService = cloudinaryService; // Added for Cloudinary
         }
 
         [HttpGet("GetUserInfo")]
@@ -153,45 +157,54 @@ namespace APIClothesEcommerceShop.Controllers
                 }
 
                 // Kiểm tra loại file
-                var allowedTypes = new[]
+                var allowedImageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+                var allowedVideoTypes = new[] { "video/mp4", "video/webm", "video/ogg" };
+
+                string fileUrl;
+
+                if (allowedImageTypes.Contains(file.ContentType.ToLower()))
                 {
-            "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
-            "video/mp4", "video/webm", "video/ogg"
-        };
-                if (!allowedTypes.Contains(file.ContentType.ToLower()))
+                    // Upload image to Cloudinary
+                    fileUrl = await _cloudinaryService.UploadImageAsync(file, "chat-media");
+                }
+                else if (allowedVideoTypes.Contains(file.ContentType.ToLower()))
+                {
+                    // For video files, keep local storage for now
+                    // Tăng giới hạn lên 20MB
+                    if (file.Length > 20 * 1024 * 1024)
+                    {
+                        return BadRequest(new { success = false, message = "File quá lớn. Tối đa 20MB" });
+                    }
+
+                    // Tạo tên file unique
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+
+                    // Đường dẫn lưu file
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "media", "chat");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    // Lưu file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                    fileUrl = $"/api/Chat/media/{fileName}";
+                }
+                else
                 {
                     return BadRequest(new { success = false, message = "Chỉ chấp nhận hình ảnh (JPG, PNG, GIF, WebP) hoặc video (MP4, WebM, OGG)" });
-                }
-
-                // Tăng giới hạn lên 20MB
-                if (file.Length > 20 * 1024 * 1024)
-                {
-                    return BadRequest(new { success = false, message = "File quá lớn. Tối đa 20MB" });
-                }
-
-                // Tạo tên file unique
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-
-                // Đường dẫn lưu file
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "media", "chat");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                // Lưu file
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
                 }
 
                 // Log upload info
                 var userIdClaim = User.FindFirst("id")?.Value;
                 var userNameClaim = User.FindFirst("name")?.Value;
 
-                Console.WriteLine($"📤 User {userNameClaim} ({userIdClaim}) uploaded media: {fileName}");
+                Console.WriteLine($"📤 User {userNameClaim} ({userIdClaim}) uploaded media: {file.FileName} to {fileUrl}");
 
                 return Ok(new
                 {
@@ -199,10 +212,10 @@ namespace APIClothesEcommerceShop.Controllers
                     message = "Upload thành công",
                     data = new
                     {
-                        fileName = fileName,
+                        fileName = file.FileName, // Keep original name for display
                         originalName = file.FileName,
                         size = file.Length,
-                        url = $"/api/Chat/media/{fileName}",
+                        url = fileUrl, // Use Cloudinary URL for images, local URL for videos
                         uploadedBy = userNameClaim,
                         uploadDate = DateTime.Now
                     }
@@ -254,7 +267,7 @@ namespace APIClothesEcommerceShop.Controllers
             try
             {
                 // Validate fileName để tránh path traversal
-                if (string.IsNullOrEmpty(fileName) || fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\"))
+                if (string.IsNullOrEmpty(fileName) || fileName.Contains(".." ) || fileName.Contains("/") || fileName.Contains("\\"))
                 {
                     return BadRequest("Tên file không hợp lệ");
                 }

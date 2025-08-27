@@ -9,7 +9,9 @@ using APIClothesEcommerceShop.DTO.Reviews;
 using APIClothesEcommerceShop.Models;
 using APIClothesEcommerceShop.Repositories.Repository;
 using APIClothesEcommerceShop.Services;
+using APIClothesEcommerceShop.Services.CloudinaryService; // Added for Cloudinary
 using APIClothesEcommerceShop.Utils;
+using Microsoft.AspNetCore.Http; // Added for IFormFile
 using Microsoft.EntityFrameworkCore;
 
 namespace APIClothesEcommerceShop.Repositories.Reviews
@@ -18,13 +20,14 @@ namespace APIClothesEcommerceShop.Repositories.Reviews
     {
         private readonly EcommerceShopContext _db;
         private readonly IGeminiAIService _ai;
-        private static string pathImageReview = "wwwroot/HinhAnh/Reviews";
+        private readonly ICloudinaryService _cloudinaryService; // Added for Cloudinary
         private static string[] filterStatusOrder = ["đã nhận", "đã thanh toán"]; // Trạng thái để lọc việc get danh sách đánh giá
 
-        public ReviewRepository(EcommerceShopContext db, IGeminiAIService ai) : base(db)
+        public ReviewRepository(EcommerceShopContext db, IGeminiAIService ai, ICloudinaryService cloudinaryService) : base(db)
         {
             _db = db;
             _ai = ai;
+            _cloudinaryService = cloudinaryService; // Added for Cloudinary
         }
 
         // #region [REVIEW METHODS FOR PRODUCTS AND COMBOS ONLY FOR CUSTOMERS]
@@ -637,31 +640,13 @@ namespace APIClothesEcommerceShop.Repositories.Reviews
                     return Array.Empty<string>();
                 }
 
-                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), pathImageReview);
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-                List<string> savedFileNames = new List<string>();
+                List<string> imageUrls = new List<string>();
                 foreach (var file in fileForms)
                 {
-                    var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                    if (string.IsNullOrEmpty(ext) || !allowedExtensions.Contains(ext))
-                    {
-                        throw new ArgumentException($"Chỉ cho phép tải lên các tệp hình ảnh hợp lệ (jpg, jpeg, png, gif, bmp).");
-                    }
-                    // Tạo tên file duy nhất
-                    var uniqueFileName = $"{Path.GetFileNameWithoutExtension(file.FileName.Replace(' ', '_'))}_{Guid.NewGuid()}{ext}";
-                    var filePath = Path.Combine(folderPath, uniqueFileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
-                    savedFileNames.Add(uniqueFileName);
+                    var imageUrl = await _cloudinaryService.UploadImageAsync(file, "review-images");
+                    imageUrls.Add(imageUrl);
                 }
-                return savedFileNames.ToArray();
+                return imageUrls.ToArray();
             }
             catch (Exception)
             {
@@ -675,13 +660,27 @@ namespace APIClothesEcommerceShop.Repositories.Reviews
 
             try
             {
-                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), pathImageReview);
-                foreach (var fileName in savedFiles)
+                foreach (var imageUrl in savedFiles)
                 {
-                    var filePath = Path.Combine(folderPath, fileName);
-                    if (File.Exists(filePath))
+                    // Extract public ID from Cloudinary URL
+                    // Example URL: https://res.cloudinary.com/your_cloud_name/image/upload/v1678888888/folder/public_id.jpg
+                    // Public ID is 'folder/public_id'
+                    var uri = new Uri(imageUrl);
+                    var segments = uri.Segments;
+                    // Find the 'upload' segment index
+                    int uploadIndex = Array.IndexOf(segments, "upload/");
+                    if (uploadIndex != -1 && segments.Length > uploadIndex + 1)
                     {
-                        File.Delete(filePath);
+                        // The public ID starts after 'upload/' and before the file extension
+                        string publicIdWithExtension = string.Join("", segments.Skip(uploadIndex + 1));
+                        string publicId = Path.GetFileNameWithoutExtension(publicIdWithExtension);
+                        // If there are folders in the public ID, they will be included
+                        if (publicIdWithExtension.Contains("/"))
+                        {
+                            publicId = publicIdWithExtension.Substring(0, publicIdWithExtension.LastIndexOf("."));
+                        }
+
+                        _cloudinaryService.DeleteImageAsync(publicId).Wait(); // Use .Wait() for synchronous call in this context
                     }
                 }
                 return true;

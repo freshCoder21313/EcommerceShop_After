@@ -8,6 +8,8 @@ using static Azure.Core.HttpHeader;
 using APIClothesEcommerceShop.Data;
 using APIClothesEcommerceShop.DTO.Combos;
 using APIClothesEcommerceShop.Repositories.DetailCombo;
+using APIClothesEcommerceShop.Services.CloudinaryService; // Added for Cloudinary
+using Microsoft.AspNetCore.Http; // Added for IFormFile
 
 namespace APIClothesEcommerceShop.Services
 {
@@ -16,34 +18,29 @@ namespace APIClothesEcommerceShop.Services
         private readonly IComboRepository comboRepository;
         private readonly IDetailCombo detailComboRepository;
         private readonly EcommerceShopContext db;
-        public ComboService(IComboRepository comboRepository, IDetailCombo detailComboRepository, EcommerceShopContext db)
+        private readonly ICloudinaryService _cloudinaryService; // Added for Cloudinary
+
+        public ComboService(IComboRepository comboRepository, IDetailCombo detailComboRepository, EcommerceShopContext db, ICloudinaryService cloudinaryService)
         {
             this.comboRepository = comboRepository;
             this.detailComboRepository = detailComboRepository;
             this.db = db;
+            _cloudinaryService = cloudinaryService; // Added for Cloudinary
         }
         public async Task AddCombo(ComboRequestDTO combo)
         {
             await db.Database.BeginTransactionAsync();
             try
             {
+                string imageUrl = null;
                 if(combo.Hinh != null)
                 {
-                    var folderPath = Path.Combine("wwwroot/HinhAnh/AnhCombo");
-                    if (!Directory.Exists(folderPath))
-                    {
-                        Directory.CreateDirectory(folderPath);
-                    }
-                    var filePath = Path.Combine(folderPath, combo.Hinh.FileName);
-                    using(var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await combo.Hinh.CopyToAsync(stream);
-                    }
+                    imageUrl = await _cloudinaryService.UploadImageAsync(combo.Hinh, "combo-images");
                 }
                 var model = new Combo
                 {
                     TenCombo = combo.TenCombo,
-                    Hinh = combo.Hinh?.FileName,
+                    Hinh = imageUrl, // Store Cloudinary URL
                     SoTienGiam = combo.SoTienGiam,
                     PhanTramGiam = combo.PhanTramGiam,
                     NgayKetThuc = combo.NgayKetThuc,
@@ -79,24 +76,18 @@ namespace APIClothesEcommerceShop.Services
             await db.Database.BeginTransactionAsync();
             try
             {
-                if (combo.Hinh != null)
-                {
-                    var folderPath = Path.Combine("wwwroot/HinhAnh/AnhCombo");
-                    if (!Directory.Exists(folderPath))
-                    {
-                        Directory.CreateDirectory(folderPath);
-                    }
-                    var filePath = Path.Combine(folderPath, combo.Hinh.FileName);
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await combo.Hinh.CopyToAsync(stream);
-                    }
-                }
                 var findCombo = await db.Combos.FindAsync(id);
                 if(findCombo == null)
                 {
                     throw new Exception("Combo not found");
                 }
+
+                string imageUrl = findCombo.Hinh; // Keep existing image URL by default
+                if (combo.Hinh != null)
+                {
+                    imageUrl = await _cloudinaryService.UploadImageAsync(combo.Hinh, "combo-images");
+                }
+
                 findCombo.TenCombo = combo.TenCombo;
                 findCombo.PhanTramGiam = combo.PhanTramGiam;
                 findCombo.SoTienGiam = combo.SoTienGiam;
@@ -104,7 +95,7 @@ namespace APIClothesEcommerceShop.Services
                 findCombo.IsActive = true;
                 findCombo.NgayBatDau = combo.NgayBatDau;
                 findCombo.NgayKetThuc = combo.NgayKetThuc;
-                findCombo.Hinh = combo.Hinh?.FileName ?? findCombo.Hinh;
+                findCombo.Hinh = imageUrl; // Store Cloudinary URL
                 findCombo.SoLuong = combo.SoLuong;
                 await comboRepository.EditCombo(findCombo);
                 await detailComboRepository.DeleteDetailComboByMaCombo(findCombo.MaCombo);
