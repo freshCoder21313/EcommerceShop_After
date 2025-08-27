@@ -1,24 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using APIClothesEcommerceShop.Data;
 using APIClothesEcommerceShop.Models;
+using APIClothesEcommerceShop.Services.CloudinaryService; // Added for Cloudinary
+using Microsoft.AspNetCore.Hosting; // Added for IWebHostEnvironment
+using Microsoft.AspNetCore.Http; // Added for FormFile
+using Microsoft.EntityFrameworkCore;
 
 namespace APIClothesEcommerceShop.Repositories.DbInitializer
 {
     public class DbInitializer : IDbInitializer
     {
         private readonly EcommerceShopContext _db;
-        public DbInitializer(EcommerceShopContext db)
+        private readonly ICloudinaryService _cloudinaryService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public DbInitializer(EcommerceShopContext db, ICloudinaryService cloudinaryService, IWebHostEnvironment webHostEnvironment)
         {
             _db = db;
+            _cloudinaryService = cloudinaryService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public void InitializeDb()
         {
             // _db.Database.EnsureCreated();
-            InitTestAccount();
+            // InitTestAccount();
+#if DEBUG
+            // TestCloudinaryMigrationAsync().Wait(); // Call the new test method
+#endif
+            MigrateImagesToCloudinary().Wait(); // Call the new migration method
             // InitTestOrder(3);
             // CreateOrderForTest("customer.demo@email.com", 14000000);
             // UpdateStreakForTest("customer.demo@email.com", 7);
@@ -231,7 +244,7 @@ namespace APIClothesEcommerceShop.Repositories.DbInitializer
 
                         Chitietcombohoadon ctcbo = (new Chitietcombohoadon
                         {
-                            MaCtsp = chitietsanphams.FirstOrDefault()?.MaCtsp ?? 3, // Combo không có mã chi tiết sản phẩm
+                            MaCtsp = chitietsanphams.FirstOrDefault()?.MaCtsp ?? throw new Exception("Cannot find product detail"), // Combo không có mã chi tiết sản phẩm
                             SoLuong = soLuong,
                             DonGia = donGia,
                             MaCombo = combo.MaCombo // Gán ID của combo
@@ -269,5 +282,174 @@ namespace APIClothesEcommerceShop.Repositories.DbInitializer
                 _db.SaveChanges();
             }
         }
+
+        private async Task MigrateImagesToCloudinary()
+        {
+            Console.WriteLine("Starting image migration to Cloudinary...");
+
+            // Migrate Khachhang images
+            var customers = await _db.Khachhangs.Where(c => c.HinhDaiDien != null && !c.HinhDaiDien.StartsWith("http")).ToListAsync();
+            foreach (var customer in customers)
+            {
+                var newUrl = await MigrateImage(customer.HinhDaiDien, "customer-profiles");
+                if (newUrl != null)
+                {
+                    customer.HinhDaiDien = newUrl;
+                }
+            }
+
+            // Migrate Nhanvien images
+            var staffs = await _db.Nhanviens.Where(n => n.HinhDaiDien != null && !n.HinhDaiDien.StartsWith("http")).ToListAsync();
+            foreach (var staff in staffs)
+            {
+                if (string.IsNullOrEmpty(staff.HinhDaiDien)) continue;
+                var newUrl = await MigrateImage(staff.HinhDaiDien, "staff-profiles");
+                if (newUrl != null)
+                {
+                    staff.HinhDaiDien = newUrl;
+                }
+            }
+
+            // Migrate DanhGia images
+            var reviews = await _db.DanhGias.Where(r => r.TenCacHinhAnh != null && !r.TenCacHinhAnh.StartsWith("http")).ToListAsync();
+            foreach (var review in reviews)
+            {
+                // Assuming TenCacHinhAnh stores comma-separated local paths
+                if (string.IsNullOrEmpty(review.TenCacHinhAnh)) continue;
+                var localPaths = review.TenCacHinhAnh.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                List<string> cloudinaryUrls = new List<string>();
+                foreach (var localPath in localPaths)
+                {
+                    var imageUrl = await MigrateImage(localPath.Trim(), "review-images");
+                    if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        cloudinaryUrls.Add(imageUrl);
+                    }
+                }
+                if (cloudinaryUrls.Any())
+                {
+                    review.TenCacHinhAnh = string.Join(",", cloudinaryUrls);
+                }
+            }
+
+            // Migrate Combo images
+            var combos = await _db.Combos.Where(c => c.Hinh != null && !c.Hinh.StartsWith("http")).ToListAsync();
+            foreach (var combo in combos)
+            {
+                if (string.IsNullOrEmpty(combo.Hinh)) continue;
+                var newUrl = await MigrateImage(combo.Hinh, "combo-images");
+                if (newUrl != null)
+                {
+                    combo.Hinh = newUrl;
+                }
+            }
+
+            // Migrate Hinhanh images
+            var images = await _db.Hinhanhs.Where(h => h.TenHinhAnh != null && !h.TenHinhAnh.StartsWith("http")).ToListAsync();
+            foreach (var image in images)
+            {
+                if (string.IsNullOrEmpty(image.TenHinhAnh)) continue;
+                var newUrl = await MigrateImage(image.TenHinhAnh, "product-detail-images");
+                if (newUrl != null)
+                {
+                    image.TenHinhAnh = newUrl;
+                }
+            }
+
+            await _db.SaveChangesAsync();
+            Console.WriteLine("Image migration to Cloudinary completed.");
+        }
+
+        private async Task<string?> MigrateImage(string imagePath, string cloudinaryTag)
+        {
+            if (string.IsNullOrEmpty(imagePath) || imagePath.StartsWith("http"))
+            {
+                return imagePath; // Already migrated or no image
+            }
+            string wwwRootPath = _webHostEnvironment.WebRootPath;
+
+            // Construct full local path
+            // Assuming local paths are relative to wwwroot, e.g., /AnhKhachHang/image.jpg
+
+            string fileName = Path.GetFileName(imagePath); // chỉ lấy tên file
+
+            // Tìm tất cả file trùng tên trong wwwroot (kể cả thư mục con)
+            string[] matches = Directory.GetFiles(wwwRootPath, fileName, SearchOption.AllDirectories);
+
+            string? fullLocalPath = matches.FirstOrDefault(); // lấy file đầu tiên tìm thấy
+
+            if (!File.Exists(fullLocalPath))
+            {
+                Console.WriteLine($"Warning: Local image file not found: {fullLocalPath}");
+                return null; // File not found, cannot migrate
+            }
+
+            try
+            {
+                using (var stream = new FileStream(fullLocalPath, FileMode.Open))
+                {
+                    // Create a dummy IFormFile from the local file stream
+                    var formFile = new FormFile(stream, 0, stream.Length, "file", Path.GetFileName(fullLocalPath));
+                    var cloudinaryUrl = await _cloudinaryService.UploadImageAsync(formFile, cloudinaryTag);
+
+                    // Optional: Delete local file after successful upload
+                    // File.Delete(fullLocalPath);
+                    Console.WriteLine($"Migrated {imagePath} to {cloudinaryUrl}");
+                    return cloudinaryUrl;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error migrating image {imagePath}: {ex.Message}");
+                return null;
+            }
+        }
+
+#if DEBUG
+        private async Task TestCloudinaryMigrationAsync()
+        {
+            Console.WriteLine("[TEST MODE] Starting Cloudinary migration test for a single image from Hinhanh table...");
+
+            // Find one image from Hinhanh that has a local image URL
+            var image = await _db.Hinhanhs
+                .Where(h => !string.IsNullOrEmpty(h.TenHinhAnh) && !h.TenHinhAnh.StartsWith("http"))
+                .FirstOrDefaultAsync();
+
+            if (image == null)
+            {
+                Console.WriteLine("[TEST MODE] No local images found in Hinhanh table to test.");
+                return;
+            }
+
+            Console.WriteLine($"[TEST MODE] Found image to test. ID: {image.MaHinhAnh}, Current Image URL: {image.TenHinhAnh}");
+
+            var originalUrl = image.TenHinhAnh;
+            var newUrl = await MigrateImage(originalUrl, "product-images");
+
+            if (newUrl != null && newUrl != originalUrl)
+            {
+                Console.WriteLine($"[TEST MODE] SUCCESS: Image migrated successfully.");
+                Console.WriteLine($"[TEST MODE] >> Old URL: {originalUrl}");
+                Console.WriteLine($"[TEST MODE] >> New URL: {newUrl}");
+
+                // Update the URL in the entity
+                image.TenHinhAnh = newUrl;
+
+                // Save changes to the database
+                await _db.SaveChangesAsync();
+                Console.WriteLine($"[TEST MODE] Database updated for Hinhanh ID: {image.MaHinhAnh}.");
+            }
+            else if (newUrl == originalUrl)
+            {
+                Console.WriteLine("[TEST MODE] SKIPPED: The image URL was already a remote URL or empty.");
+            }
+            else
+            {
+                Console.WriteLine($"[TEST MODE] FAILED: Image migration failed for Hinhanh ID: {image.MaHinhAnh}. Check previous logs for errors.");
+            }
+
+            Console.WriteLine("[TEST MODE] Cloudinary migration test finished.");
+        }
+#endif
     }
 }
