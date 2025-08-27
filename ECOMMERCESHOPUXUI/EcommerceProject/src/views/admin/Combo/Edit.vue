@@ -5,6 +5,7 @@ import { GetApiUrl } from '../../../../src/constants/api.js';
 import * as bootstrap from 'bootstrap';
 import Cookies from 'js-cookie';
 import { debounce } from 'lodash';
+import pathReplaceImg from '@/utils/processPathImg'
 
 
 const getUrlAPI = ref(GetApiUrl());
@@ -508,7 +509,7 @@ async function UpdateCombo() {
                     <input @change="handleFileChange" type="file" class="form-control" accept="image/*" />
                     <div class="mt-2">
                       <img v-if="comboEdit.hinh && typeof comboEdit.hinh === 'string'"
-                        :src="`${getUrlAPI}/HinhAnh/AnhCombo/${comboEdit.hinh}`" alt="Ảnh combo" class="img-thumbnail"
+                        :src="pathReplaceImg(undefined, 'HinhAnh/AnhCombo', comboEdit.hinh)" alt="Ảnh combo" class="img-thumbnail"
                         @error="comboEdit.hinh = null" />
                       <span v-else-if="!comboEdit.hinh">Không có ảnh</span>
                     </div>
@@ -566,7 +567,7 @@ async function UpdateCombo() {
                             :class="{ 'selected-product-card': selectedDetailIndex !== null && product.maSp === comboEdit.chitietcombos[selectedDetailIndex].maSp }">
                             <div class="row g-0">
                               <div class="col-auto">
-                                <img :src="`${getUrlAPI}/HinhAnh/Products/${product.anhDaiDien || 'default.png'}`"
+                                <img :src="pathReplaceImg(undefined, 'HinhAnh/Products', product.anhDaiDien || 'default.png')"
                                   class="img-fluid rounded-start product-card-img-horizontal" alt="Product Image" @error="product.anhDaiDien = null" />
                               </div>
                               <div class="col">

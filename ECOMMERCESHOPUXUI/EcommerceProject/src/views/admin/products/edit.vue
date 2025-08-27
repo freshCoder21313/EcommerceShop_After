@@ -584,7 +584,7 @@ function closeModal() {
                 </button>
                 <img
                   v-if="!image.preview"
-                  :src="getUrlAPI.replace('api', '') + '/HinhAnh/Products/' + image.tenHinhAnh"
+                  :src="pathReplaceImg(undefined, 'HinhAnh/Products', img.tenHinhAnh)"
                   alt="Ảnh sản phẩm"
                   class="img-thumbnail"
                   style="max-width: 150px; max-height: 150px"
@@ -713,7 +713,7 @@ function closeModal() {
                     </button>
                     <img
                       v-if="!img.preview"
-                      :src="getUrlAPI.replace('api', '') + `/HinhAnh/Products/${img.tenHinhAnh}`"
+                      :src="pathReplaceImg(undefined, 'HinhAnh/Products', img.tenHinhAnh)"
                       alt="Ảnh đã chọn"
                       style="max-width: 150px; max-height: 150px"
                       class="img-thumbnail rounded border"

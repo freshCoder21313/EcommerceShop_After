@@ -9,6 +9,7 @@ import RecomendationProduct from '@/components/RecommendationProduct/Recomendati
 import Swal from 'sweetalert2'
 import ReviewProductCombo from '@/components/pages/customers/reviews/ReviewProductCombo.vue'
 import TryOnProduct from '@/components/specicals/TryOnProduct.vue' // Import TryOnProduct
+import pathReplaceImg from '@/utils/processPathImg'
 
 import { emitter } from '@/stores/eventBus'
 import { formatCurrency } from '@/constants/formatCurrency'
@@ -255,7 +256,7 @@ const tryOnProductData = computed(() => {
       v.kichThuoc === (selectedVariants.value[index]?.size || availableSizes.value[index]?.[0])
     );
     const imageUrl = selectedVariant?.images[0]?.tenHinhAnh
-      ? `${getUrlAPI.value.replace('/api', '')}/HinhAnh/Products/${selectedVariant.images[0].tenHinhAnh}`
+      ? pathReplaceImg(undefined, 'HinhAnh/Products', selectedVariant.images[0].tenHinhAnh)
       : '';
     return {
       image: imageUrl,
@@ -266,7 +267,7 @@ const tryOnProductData = computed(() => {
   return {
     id: combo.value.id,
     name: combo.value.name,
-    image: `${getUrlAPI.value.replace('/api', '')}/HinhAnh/AnhCombo/${combo.value.hinh}`, // Main combo image
+    image: pathReplaceImg(undefined, 'HinhAnh/AnhCombo', combo.tenHinhAnh), // Main combo image
     type: 'combo',
     category: 'combo', // Generic category for the combo itself
     description: combo.value.description,
@@ -297,7 +298,7 @@ const formatRating = (rating) => {
               <div class="product__details__pic">
                 <div style="position: relative" class="product__details__slider__content">
                   <div>
-                    <img class="product__big__img" :src="`${getUrlAPI}/HinhAnh/AnhCombo/${combo.image}`" alt="" />
+                    <img class="product__big__img" :src="pathReplaceImg(undefined,'HinhAnh/AnhCombo', combo.image)" alt="" />
                   </div>
                 </div>
               </div>
@@ -326,9 +327,9 @@ const formatRating = (rating) => {
                   </div>
                   <div class="button-group">
                     <button style="height: 50px" href="#" class="cart-btn" @click.prevent="addToCart">
-                      <span class="icon_bag_alt"></span> Thêm giỏ hàng
+                      <span class="icon_bag_alt"></span>
                     </button>
-                    <button style="margin-bottom: 14px" class="action-buttons">
+                    <!-- <button style="margin-bottom: 14px" class="action-buttons">
                       <a href="#" style="border-radius: 50%; width: 50px; height: 50px" class="action-btn"><span
                           class="icon_heart_alt"></span></a>
                       <a href="#" style="
@@ -339,15 +340,16 @@ const formatRating = (rating) => {
                           margin-left: 8px;
                         " class="action-btn" @click.prevent="addComboToCompare" title="Thêm vào so sánh Combo"><span
                           class="icon_adjust-horiz"></span></a>
-                    </button>
-                    <div style="margin-bottom: 14px" class="action-buttons">
-                      <a href="#" style="border-radius: 50%; width: 50px; height: 50px" class="action-btn"><span
-                          class="icon_heart_alt"></span></a>
-                      <a href="#" style="border-radius: 50%; width: 50px; height: 50px" class="action-btn"><span
-                          class="icon_adjust-horiz"></span></a>
-                    </div>
-                    <TryOnProduct :product="tryOnProductData" v-if="tryOnProductData" />
+                    </button> -->
                   </div>
+                  <br/>
+                  <div style="margin-bottom: 14px" class="action-buttons">
+                    <a href="#" style="border-radius: 50%; width: 50px; height: 50px" class="action-btn"><span
+                        class="icon_heart_alt"></span></a>
+                    <a href="#" style="border-radius: 50%; width: 50px; height: 50px" class="action-btn"><span
+                        class="icon_adjust-horiz"></span></a>
+                  </div>
+                  <TryOnProduct :product="tryOnProductData" v-if="tryOnProductData" />
                 </div>
                 <div class="product__details__widget">
                   <ul class="variant-list">

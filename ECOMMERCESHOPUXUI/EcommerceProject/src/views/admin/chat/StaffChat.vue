@@ -25,6 +25,7 @@ import { storage } from '../../../firebase/rtdb-config.js';
 
 import { fetchWithAuth } from '@/services/authService.js';
 import ConnectionStatus from '../../../components/ConnectionStatus.vue';
+import pathReplaceImg from '@/utils/processPathImg';
 import { formatCurrency } from '@/constants/formatCurrency';
 
 
@@ -354,11 +355,12 @@ const debounce = (func, delay) => {
 
 const getImageUrl = (relativePath) => {
   if (!relativePath) return '/default-avatar.png';
-  const fileName = relativePath.split('/').pop();
-  if (relativePath.includes('AnhKhachHang') || relativePath.includes('AnhNhanVien')) {
-    return `${getUrlAPI.value}/api/Customer/image/${fileName}`;
+  if (relativePath.includes('AnhKhachHang')) {
+    return pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', relativePath.split('/').pop());
+  } else if (relativePath.includes('AnhNhanVien')) {
+    return pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', relativePath.split('/').pop());
   }
-  return `${getUrlAPI.value}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;
+  return pathReplaceImg(undefined, '', relativePath);
 };
 
 const formatTime = (timestamp) => {
@@ -1711,7 +1713,7 @@ if (import.meta.env.DEV) {
             @click="selectChat(chat.id); showSidebar = false">
             <div class="d-flex align-items-center">
               <!-- <div class="position-relative">
-                <img :src="getImageUrl(chat.customerAvatar) || '/default-avatar.png'" alt="Avatar" class="chat-avatar">
+                <img :src="pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', chat.customerAvatar) || '/default-avatar.png'" alt="Avatar" class="chat-avatar">
                 <span v-if="chat.isActive" class="online-indicator" title="Khách hàng đang online"></span>
               </div> -->
               <div class="ms-3 flex-grow-1">
@@ -1803,7 +1805,7 @@ if (import.meta.env.DEV) {
   <div v-if="currentChat" class="chat-header">
     <div class="d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center">
-        <img :src="getImageUrl(currentChat.customerAvatar) || '/default-avatar.png'" alt="Avatar" class="chat-avatar">
+        <img :src="pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', currentChat.customerAvatar) || '/default-avatar.png'" alt="Avatar" class="chat-avatar">
         <div class="ms-3">
           <h6 class="mb-0">{{ currentChat.customerName }}</h6>
           <small class="text-muted">{{ currentChat.isActive ? 'Đang online' : 'Ngoại tuyến' }}</small>
@@ -1818,7 +1820,7 @@ if (import.meta.env.DEV) {
     <div class="chat-messages flex-grow-1 position-relative">
       <div v-for="message in sortedMessages" :key="message.id" class="message mb-3" :class="{ 'message-sent': message.senderRole !== 'customer', 'message-received': message.senderRole === 'customer' }">
         <div class="message-wrapper">
-          <img v-if="message.senderRole === 'customer'" :src="getImageUrl(currentChat.customerAvatar) || '/default-avatar.png'" alt="Customer Avatar" class="message-avatar">
+          <img v-if="message.senderRole === 'customer'" :src="pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', currentChat.customerAvatar) || '/default-avatar.png'" alt="Customer Avatar" class="message-avatar">
           <div class="message-content">
             <div class="message-sender" v-if="message.senderName">
               {{ message.senderName }}

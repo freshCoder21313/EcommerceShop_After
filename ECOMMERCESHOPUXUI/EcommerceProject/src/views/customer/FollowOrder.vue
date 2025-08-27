@@ -80,8 +80,8 @@
                 <img
                   :src="
                     item.maCtsp
-                      ? `${getUrlAPI}/HinhAnh/Products/${item.hinh}`
-                      : `${getUrlAPI}/HinhAnh/AnhCombo/${item.hinh}`
+                      ? pathReplaceImg(undefined, 'HinhAnh/Products', img.tenHinhAnh)
+                      : pathReplaceImg(undefined, 'HinhAnh/AnhCombo', img.tenHinhAnh)
                   "
                   :alt="item.tenSanPham"
                 />

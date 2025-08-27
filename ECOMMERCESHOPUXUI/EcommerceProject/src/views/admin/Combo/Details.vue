@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { GetApiUrl } from '../../../../src/constants/api.js';
 import Cookies from 'js-cookie';
+import pathReplaceImg from '@/utils/processPathImg'
 
 const props = defineProps({
   Combo: Object,
@@ -67,7 +68,7 @@ onMounted(() => {
 const getProductImage = (maSp) => {
     const product = productMap.value[maSp];
     if (product && product.productDetails[0].images[0].tenHinhAnh) {
-        return `${getApiUrl}/HinhAnh/Products/${product.productDetails[0].images[0].tenHinhAnh}`;
+        return pathReplaceImg(undefined, 'HinhAnh/Products', product.productDetails[0].images[0].tenHinhAnh);
     }
     // Fallback or placeholder image
     return 'https://via.placeholder.com/80';
@@ -145,7 +146,7 @@ const statusText = computed(() => {
                   <div class="mb-4">
                     <label class="form-label fw-bold">Hình ảnh combo</label>
                     <div>
-                      <img v-if="comboDetails.hinh" :src="`${getApiUrl}/HinhAnh/AnhCombo/${comboDetails.hinh}`" alt="Ảnh combo" class="img-thumbnail" />
+                      <img v-if="comboDetails.hinh" :src="pathReplaceImg(undefined, 'HinhAnh/AnhCombo', comboDetails.hinh)" alt="Ảnh combo" class="img-thumbnail" />
                       <p v-else class="text-muted mt-2">Không có hình ảnh</p>
                     </div>
                   </div>

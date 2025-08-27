@@ -141,6 +141,7 @@ import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/utils/auth'
 import Cookies from 'js-cookie'
+import pathReplaceImg from '@/utils/processPathImg'
 
 export default {
   name: 'CustomerForm',
@@ -564,7 +565,7 @@ export default {
           if (imagePath) {
             if (imagePath.includes('AnhKhachHang')) {
               const fileName = imagePath.split('/').pop()
-              imagePreview.value = `${apiUrl.value}/api/Customer/image/${fileName}`
+              imagePreview.value = pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', fileName)
             } else {
               imagePreview.value = `${apiUrl.value}/api/${imagePath.startsWith('/') ? '' : '/'
                 }${imagePath}`

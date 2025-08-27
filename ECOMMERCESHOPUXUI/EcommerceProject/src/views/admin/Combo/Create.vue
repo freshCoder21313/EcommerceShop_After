@@ -3,6 +3,7 @@ import { ref, watch, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 import { GetApiUrl } from '../../../../src/constants/api.js';
 import Cookies from 'js-cookie';
+import pathReplaceImg from '@/utils/processPathImg'
 
 const getApiUrl = GetApiUrl();
 const token = Cookies.get('accessToken');
@@ -262,7 +263,7 @@ onMounted(() => {
                       <div class="col-8">
                         <label class="form-label">Sản phẩm đã chọn</label>
                         <div class="selected-product-display">
-                          <img v-if="detail.maSp && productMap[detail.maSp]" :src="`${getApiUrl}/HinhAnh/Products/${productMap[detail.maSp].anhDaiDien}`" alt="SP" class="thumbnail" />
+                          <img v-if="detail.maSp && productMap[detail.maSp]" :src="pathReplaceImg(undefined, 'HinhAnh/Products', productMap[detail.maSp].anhDaiDien)" alt="SP" class="thumbnail" />
                           <span v-if="detail.maSp && productMap[detail.maSp]">{{ productMap[detail.maSp].tenSanPham }}</span>
                           <span v-else class="text-muted">Chưa có sản phẩm nào được chọn</span>
                         </div>
@@ -282,7 +283,7 @@ onMounted(() => {
                           <input type="text" class="form-control mb-3" placeholder="Tìm kiếm sản phẩm..." v-model="search" @input="filterProducts" />
                           <div v-if="productList.length > 0" class="product-list-scroll">
                               <div v-for="product in productList" :key="product.maSp" class="product-card" @click="selectProduct(product)" :class="{ 'highlight-product': detail.maSp === product.maSp }">
-                                  <img :src="`${getApiUrl}/HinhAnh/Products/${product.anhDaiDien}`" alt="Hình sản phẩm" class="product-card-img" />
+                                  <img :src="pathReplaceImg(undefined, 'HinhAnh/Products', product.anhDaiDien)" alt="Hình sản phẩm" class="product-card-img" />
                                   <div class="product-card-info">
                                       <p class="fw-bold mb-0">{{ product.tenSanPham }}</p>
                                       <p class="text-muted mb-0">Mã: {{ product.maSp }}</p>

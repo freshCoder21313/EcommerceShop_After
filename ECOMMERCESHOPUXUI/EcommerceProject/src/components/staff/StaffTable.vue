@@ -224,7 +224,7 @@
                 >Hình đại diện</label
               >
               <img
-                :src="getImageUrl(selectedStaff.hinh)"
+                :src="pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', selectedStaff.hinh)"
                 alt="Hình đại diện"
                 class="image-preview mt-6"
                 loading="lazy"
@@ -323,6 +323,7 @@ import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/utils/auth'
 import Cookies from 'js-cookie'
+import pathReplaceImg from '@/utils/processPathImg'
 export default {
   name: 'StaffTable',
   emits: ['edit-staff', 'refresh-data'],
@@ -450,13 +451,7 @@ export default {
 
     const getImageUrl = (relativePath) => {
       if (!relativePath) return 'https://via.placeholder.com/36'
-
-      if (relativePath.includes('AnhNhanVien')) {
-        const fileName = relativePath.split('/').pop()
-        return `${apiUrl.value}/api/Staff/image/${fileName}`
-      }
-
-      return `${apiUrl.value}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`
+      return pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', relativePath)
     }
 
     const displayedStaff = computed(() => {

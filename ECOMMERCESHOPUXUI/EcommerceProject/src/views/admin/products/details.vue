@@ -242,7 +242,7 @@ watch(
               :src="
                 image.preview
                   ? image.preview
-                  : getUrlAPI.replace('api', '') + '/HinhAnh/Products/' + image.tenHinhAnh
+                  : pathReplaceImg(undefined, 'HinhAnh/Products', img.tenHinhAnh)
               "
               class="image-thumb"
               alt="Ảnh sản phẩm"
@@ -311,7 +311,7 @@ watch(
                 :src="
                   img.preview
                     ? img.preview
-                    : getUrlAPI.replace('api', '') + '/HinhAnh/Products/' + img.tenHinhAnh
+                    : pathReplaceImg(undefined, 'HinhAnh/Products', img.tenHinhAnh)
                 "
                 class="image-thumb"
                 alt="Ảnh biến thể"

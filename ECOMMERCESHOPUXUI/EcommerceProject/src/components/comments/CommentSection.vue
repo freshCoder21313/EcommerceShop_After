@@ -48,7 +48,7 @@
           <li v-for="comment in paginatedComments" :key="comment.id" class="list-group-item review-item">
             <!-- Main Comment -->
             <div class="review-header">
-              <img :src="comment.avatar || '/path/to/default-avatar.png'" alt="avatar" class="reviewer-avatar" />
+              <img :src="pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', comment.avatar) || '/default-avatar.png'" alt="avatar" class="reviewer-avatar" />
               <div class="reviewer-info">
                 <strong class="reviewer-name">{{ comment.hoTen || 'Ẩn danh' }}</strong>
                 <span class="review-date">{{ formatDate(comment.ngayBinhLuan) }}</span>
@@ -84,7 +84,7 @@
             <div v-if="comment.replies && comment.replies.length > 0" class="replies-section">
               <div v-for="reply in comment.replies" :key="reply.id" class="shop-reply">
                 <div class="review-header">
-                  <img :src="reply.avatar || '/path/to/default-avatar.png'" alt="avatar" class="reviewer-avatar"
+                  <img :src="pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', reply.avatar) || '/default-avatar.png'" alt="avatar" class="reviewer-avatar"
                     style="width: 35px; height: 35px;" />
                   <div class="reviewer-info">
                     <strong class="reviewer-name">{{ reply.hoTen || 'Nhân viên' }}</strong>
@@ -123,11 +123,11 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from 'vue';
 import { commentService } from '@/services/commentService';
 import Swal from 'sweetalert2';
 import EmptySuggestBox from '@/components/common/EmptySuggestBox.vue';
 import Cookies from 'js-cookie';
+import pathReplaceImg from '@/utils/processPathImg';
 
 export default {
   name: 'CommentSection',
@@ -143,34 +143,53 @@ export default {
       validator: (value) => ['product', 'combo'].includes(value),
     },
   },
-  setup(props) {
-    const comments = ref([]);
-    const loading = ref(false);
-    const isSubmitting = ref(false);
-    const isSubmittingReply = ref(false);
-    const newCommentContent = ref('');
-
-    const replyingToCommentId = ref(null);
-    const replyContent = ref('');
-
-    const currentPage = ref(1);
-    const itemsPerPage = ref(5);
-
-    const isAuthenticated = computed(() => !!Cookies.get('accessToken'));
-
-    // --- Lifecycle Hooks ---
-    onMounted(() => {
-      if (props.objectId && props.objectType) {
-        fetchComments();
-      }
-    });
-
-    // --- Data Fetching ---
-    const fetchComments = async () => {
-      if (!props.objectId || !props.objectType) return;
-      loading.value = true;
+  emits: [],
+  data() {
+    return {
+      comments: [],
+      loading: false,
+      isSubmitting: false,
+      isSubmittingReply: false,
+      newCommentContent: '',
+      replyingToCommentId: null,
+      replyContent: '',
+      currentPage: 1,
+      itemsPerPage: 5,
+    };
+  },
+  computed: {
+    isAuthenticated() {
+      return !!Cookies.get('accessToken');
+    },
+    totalPages() {
+      return Math.ceil(this.comments.length / this.itemsPerPage);
+    },
+    paginatedComments() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      return this.comments.slice(start, start + this.itemsPerPage);
+    },
+  },
+  watch: {
+    objectId: {
+      handler() {
+        this.fetchComments();
+      },
+      immediate: true,
+    },
+    objectType: {
+      handler() {
+        this.fetchComments();
+      },
+      immediate: true,
+    },
+  },
+  methods: {
+    pathReplaceImg,
+    async fetchComments() {
+      if (!this.objectId || !this.objectType) return;
+      this.loading = true;
       try {
-        const response = await commentService.getCommentsByObjectIdAndType(props.objectId, props.objectType);
+        const response = await commentService.getCommentsByObjectIdAndType(this.objectId, this.objectType);
         if (response.success) {
           const sortComments = (commentList) => {
             commentList.sort((a, b) => new Date(b.ngayBinhLuan) - new Date(a.ngayBinhLuan));
@@ -181,29 +200,27 @@ export default {
             });
           };
           sortComments(response.data);
-          comments.value = response.data;
+          this.comments = response.data;
         } else {
           Swal.fire('Lỗi', 'Không thể tải được danh sách bình luận.', 'error');
         }
       } catch (error) {
         Swal.fire('Lỗi', 'Đã xảy ra lỗi khi tải bình luận.', 'error');
       } finally {
-        loading.value = false;
+        this.loading = false;
       }
-    };
-
-    // --- Actions ---
-    const addComment = async () => {
-      if (!newCommentContent.value.trim()) {
+    },
+    async addComment() {
+      if (!this.newCommentContent.trim()) {
         Swal.fire({ icon: 'warning', title: 'Vui lòng nhập nội dung bình luận', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
         return;
       }
-      isSubmitting.value = true;
+      this.isSubmitting = true;
 
       const commentData = {
-        noiDung: newCommentContent.value.trim(),
+        noiDung: this.newCommentContent.trim(),
         parentId: null,
-        [props.objectType === 'product' ? 'maSP' : 'maCombo']: props.objectId,
+        [this.objectType === 'product' ? 'maSP' : 'maCombo']: this.objectId,
       };
 
       try {
@@ -213,86 +230,66 @@ export default {
           throw new Error(errorData.message || 'Lỗi không xác định từ máy chủ.');
         }
         if (response.success) {
-          newCommentContent.value = '';
+          this.newCommentContent = '';
           Swal.fire({ icon: 'success', title: 'Bình luận đã được gửi', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-          fetchComments(); // Refresh comments after adding
+          this.fetchComments(); // Refresh comments after adding
         } else {
           Swal.fire('Lỗi', response.message || 'Không thể gửi bình luận.', 'error');
         }
       } catch (error) {
         Swal.fire('Lỗi', error.message || 'Đã xảy ra lỗi khi gửi bình luận.', 'error');
       } finally {
-        isSubmitting.value = false;
+        this.isSubmitting = false;
       }
-    };
-
-    const submitReply = async (parentId) => {
-      if (!replyContent.value.trim()) {
+    },
+    async submitReply(parentId) {
+      if (!this.replyContent.trim()) {
         Swal.fire({ icon: 'warning', title: 'Vui lòng nhập nội dung trả lời', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
         return;
       }
-      isSubmittingReply.value = true;
+      this.isSubmittingReply = true;
 
       const replyData = {
-        noiDung: replyContent.value.trim(),
+        noiDung: this.replyContent.trim(),
         parentId: parentId,
-        [props.objectType === 'product' ? 'maSP' : 'maCombo']: props.objectId,
+        [this.objectType === 'product' ? 'maSP' : 'maCombo']: this.objectId,
       };
 
       try {
         const response = await commentService.addComment(replyData);
         if (response.success) {
-          cancelReply();
+          this.cancelReply();
           Swal.fire({ icon: 'success', title: 'Đã gửi câu trả lời', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-          fetchComments(); // Refresh comments after adding reply
+          this.fetchComments(); // Refresh comments after adding reply
         } else {
           Swal.fire('Lỗi', response.message || 'Không thể gửi câu trả lời.', 'error');
         }
       } catch (error) {
         Swal.fire('Lỗi', 'Đã xảy ra lỗi khi gửi câu trả lời.', 'error');
       } finally {
-        isSubmittingReply.value = false;
+        this.isSubmittingReply = false;
       }
-    };
-
-    // --- Helper Functions for State Management ---
-
-    const startReply = (commentId) => {
-      replyingToCommentId.value = commentId;
-      replyContent.value = '';
-    };
-
-    const cancelReply = () => {
-      replyingToCommentId.value = null;
-      replyContent.value = '';
-    };
-
-    const totalPages = computed(() => Math.ceil(comments.value.length / itemsPerPage.value));
-    const paginatedComments = computed(() => {
-      const start = (currentPage.value - 1) * itemsPerPage.value;
-      return comments.value.slice(start, start + itemsPerPage.value);
-    });
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) currentPage.value = page;
-    };
-    const formatDate = (dateString) => {
+    },
+    startReply(commentId) {
+      this.replyingToCommentId = commentId;
+      this.replyContent = '';
+    },
+    cancelReply() {
+      this.replyingToCommentId = null;
+      this.replyContent = '';
+    },
+    changePage(page) {
+      if (page >= 1 && page <= this.totalPages) this.currentPage = page;
+    },
+    formatDate(dateString) {
       if (!dateString) return '';
       return new Date(dateString).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    };
-
-    watch(() => [props.objectId, props.objectType], ([newObjectId, newObjectType], oldValues) => {
-      const [oldObjectId, oldObjectType] = oldValues || [undefined, undefined];
-      if (newObjectId && newObjectType) {
-        fetchComments();
-      }
-    }, { immediate: true });
-
-    return {
-      comments, loading, isSubmitting, isSubmittingReply, newCommentContent,
-      replyingToCommentId, replyContent, paginatedComments, currentPage, totalPages,
-      addComment, startReply, cancelReply, submitReply, formatDate, changePage,
-      isAuthenticated,
-    };
+    },
+  },
+  mounted() {
+    if (this.objectId && this.objectType) {
+      this.fetchComments();
+    }
   },
 };
 </script>

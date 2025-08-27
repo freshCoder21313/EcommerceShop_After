@@ -215,7 +215,7 @@
               >Hình đại diện</label
             >
             <img
-              :src="getImageUrl(selectedCustomer.hinh)"
+              :src="pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', selectedCustomer.hinh)"
               alt="Hình đại diện"
               class="image-preview mt-6"
               loading="lazy"
@@ -309,6 +309,7 @@ import { decodeToken, validateToken } from '@/utils/auth'
 import Cookies from 'js-cookie'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import pathReplaceImg from '@/utils/processPathImg'
 
 export default {
   name: 'CustomerTable',
@@ -447,13 +448,7 @@ export default {
 
     const getImageUrl = (relativePath) => {
       if (!relativePath) return 'Không ảnh'
-
-      if (relativePath.includes('AnhKhachHang')) {
-        const fileName = relativePath.split('/').pop()
-        return `${apiUrl.value}/api/Customer/image/${fileName}`
-      }
-
-      return `${apiUrl.value}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`
+      return pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', relativePath)
     }
 
     const displayedCustomers = computed(() => {

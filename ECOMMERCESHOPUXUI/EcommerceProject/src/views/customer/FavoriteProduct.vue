@@ -5,6 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import Swal from 'sweetalert2';
 import { decodeToken, validateToken } from '@/utils/auth';
 import { GetApiUrl } from '@/constants/api'
+import pathReplaceImg from '@/utils/processPathImg'
 function ReadToken(token) {
   if (token) {
     const decoded = jwtDecode(token);
@@ -357,7 +358,7 @@ export default {
       >
         <div class="item-image" style="width: 200px; height: 200px;">
           <img
-            :src="getApiUrl + '/HinhAnh/Products/' + item.hinhAnh"
+            :src="processPathImg(undefined, 'HinhAnh/Products', item.hinhAnh)"
             :alt="item.tenSanPham"
             style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;"
           />

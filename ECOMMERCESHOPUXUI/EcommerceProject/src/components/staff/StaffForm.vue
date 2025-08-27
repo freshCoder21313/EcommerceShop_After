@@ -16,7 +16,7 @@
                     <div class="form-group">
                         <label for="hinh">Hình ảnh:</label>
                         <div class="image-upload-container">
-                            <img :src="imagePreview || 'https://via.placeholder.com/150'" alt="Hình đại diện"
+                            <img :src="imagePreview || pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', formData.hinh) || 'https://via.placeholder.com/150'" alt="Hình đại diện"
                                 class="image-preview" @error="handleImageError" />
                             <div class="image-upload-controls">
                                 <label for="hinh-upload" class="upload-btn" style="color: white;">
@@ -175,6 +175,7 @@ import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/utils/auth'
 import Cookies from 'js-cookie'
+import pathReplaceImg from '@/utils/processPathImg'
 export default {
     name: 'StaffForm',
     props: {
@@ -841,7 +842,7 @@ export default {
 
         const getImageUrl = (relativePath) => {
             if (!relativePath) return 'https://via.placeholder.com/150';
-            return `${apiUrl.value}${relativePath}`;
+            return pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', relativePath);
         };
 
         watch(() => props.staffId, (newValue) => {

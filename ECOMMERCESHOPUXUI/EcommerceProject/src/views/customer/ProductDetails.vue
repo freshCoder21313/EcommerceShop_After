@@ -14,6 +14,7 @@ import { emitter } from '@/stores/eventBus'
 import TryOnProduct from '@/components/specicals/TryOnProduct.vue' // Import TryOnProduct
 import CommentSection from '@/components/comments/CommentSection.vue'
 import { formatCurrency } from '@/constants/formatCurrency';
+import pathReplaceImg from '@/utils/processPathImg'
 
 
 const route = useRoute()
@@ -462,7 +463,7 @@ const addToCompare = () => {
   const productToAdd = {
     id: product.value.maSp,
     name: product.value.tenSanPham,
-    image: `${getUrlAPI.value.replace('/api', '')}/HinhAnh/Products/${allImages.value[currentImage.value - 1]?.tenHinhAnh}`,
+    image: pathReplaceImg(undefined, 'HinhAnh/Products', allImages.value[currentImage.value - 1]?.tenHinhAnh),
     type: 'single',
     category: product.value.tenLoai,
     description: product.value.moTa,
@@ -628,7 +629,7 @@ const productForTryOn = computed(() => {
   if (!product.value || !product.value.maSp) return null
 
   const imageUrls = allImages.value.map(
-    (img) => `${getUrlAPI.value.replace('/api', '')}/HinhAnh/Products/${img.tenHinhAnh}`,
+    (img) => pathReplaceImg(undefined, 'HinhAnh/Products', img.tenHinhAnh),
   )
 
   return {
@@ -642,7 +643,7 @@ const productForTryOn = computed(() => {
       ...detail,
       image:
         detail.images.length > 0
-          ? `${getUrlAPI.value.replace('/api', '')}/HinhAnh/Products/${detail.images[0].tenHinhAnh}`
+          ? pathReplaceImg(undefined, 'HinhAnh/Products', detail.images[0].tenHinhAnh)
           : '',
     })),
   }
@@ -701,7 +702,7 @@ watch(
                 <!-- Main Product Image -->
                 <div class="mb-3 text-center">
                   <img v-if="allImages.length > 0 && currentImage > 0"
-                    :src="`${getUrlAPI.replace('/api', '')}/HinhAnh/Products/${allImages[currentImage - 1]?.tenHinhAnh}`"
+                    :src="pathReplaceImg(undefined, 'HinhAnh/Products', allImages[currentImage - 1]?.tenHinhAnh)"
                     :alt="product.tenSanPham" class="img-fluid"
                     style="max-height: 500px; object-fit: contain; border-radius: 12px" />
                 </div>
@@ -709,7 +710,7 @@ watch(
                 <!-- Thumbnail Images -->
                 <div class="row g-2" v-if="allImages.length > 0">
                   <div class="col-3" v-for="(image, index) in allImages.slice(0, 4)" :key="index">
-                    <img :src="`${getUrlAPI.replace('/api', '')}/HinhAnh/Products/${image.tenHinhAnh}`"
+                    <img :src="pathReplaceImg(undefined, 'HinhAnh/Products', image.tenHinhAnh)"
                       :alt="`Thumbnail ${index + 1}`" class="img-fluid w-100 rounded-2 border"
                       :class="{ 'border-2 border-danger': currentImage === index + 1 }"
                       style="height: 80px; object-fit: contain; cursor: pointer" @click="changeImage(index + 1)" />
@@ -918,7 +919,7 @@ watch(
                       <div class="row g-0">
                         <div class="col-4">
                           <img
-                            :src="`${getUrlAPI.replace('/api', '')}/HinhAnh/Products/${item.productDetails[0].images[0].tenHinhAnh}`"
+                            :src="pathReplaceImg(undefined, 'HinhAnh/Products', item.productDetails[0].images[0].tenHinhAnh)"
                             :alt="item.tenSanPham" class="img-fluid rounded-start"
                             style="height: 90px; width: 100%; object-fit: contain;">
                         </div>
@@ -1002,6 +1003,7 @@ watch(
                 </div>
               </div>
             </div>
+            <RecomendationProduct />
 
             <!-- Recommendation Section with Smart Spacing -->
           </div>
@@ -1589,7 +1591,7 @@ watch(
   z-index: 10;
 }
 
-.slider-prev,
+.slider-prev, 
 .slider-next {
   color: white;
   background-color: rgba(0, 0, 0, 0.6);
@@ -1600,7 +1602,7 @@ watch(
   transition: background-color 0.3s ease;
 }
 
-.slider-prev:hover,
+.slider-prev:hover, 
 .slider-next:hover {
   background-color: rgba(0, 0, 0, 0.8);
 }
@@ -1775,5 +1777,15 @@ watch(
 
 .product-card:nth-child(8) {
   animation-delay: 0.8s;
+}
+</style>
+
+<style>
+.swal2-popup {
+  font-size: 0.875rem;
+}
+
+.swal2-title {
+  font-size: 1.25rem;
 }
 </style>

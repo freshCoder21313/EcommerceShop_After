@@ -6,6 +6,7 @@ import { decodeToken, validateToken } from '@/utils/auth'
 import { GetApiUrl } from '@/constants/api'
 import Cookies from 'js-cookie'
 import { useRoute } from 'vue-router'
+import pathReplaceImg from '@/utils/processPathImg'
 const route = useRoute()
 const recommendationProduct = ref([])
 const id = route.params.id
@@ -130,9 +131,7 @@ onMounted(async () => {
           <div class="product-image-container">
             <div class="product-image">
               <img
-                :src="`${getUrlAPI.replace('/api', '')}/HinhAnh/Products/${
-                  item.productDetails[0].images[0].tenHinhAnh
-                }`"
+                :src="pathReplaceImg(undefined,'HinhAnh/Products', item.productDetails[0].images[0].tenHinhAnh)"
                 :alt="item.tenSanPham"
                 class="product-img"
               />

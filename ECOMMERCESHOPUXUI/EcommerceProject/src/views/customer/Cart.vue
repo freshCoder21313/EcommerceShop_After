@@ -7,6 +7,7 @@ import { decodeToken, validateToken } from '@/utils/auth'
 import Cookies from 'js-cookie'
 import Swal from 'sweetalert2'
 import { useCartStore } from '@/stores/cartStore'
+import pathReplaceImg from '@/utils/processPathImg';
 const cartStore = useCartStore()
 import { emitter } from '@/stores/eventBus'
 import { formatCurrency } from '@/constants/formatCurrency'
@@ -150,11 +151,7 @@ function confirmCart() {
                     <td class="cart__product__item">
                       <div class="tick-icon" v-if="selectedItems.includes(item.id)">✔</div>
                       <img
-                        :src="
-                          item.maCombo == null
-                            ? `${getUrlAPI.replace('/api', '')}/HinhAnh/Products/${item.tenHinhAnh}`
-                            : `${getUrlAPI.replace('/api', '')}/HinhAnh/AnhCombo/${item.tenHinhAnh}`
-                        "
+                        :src="pathReplaceImg(undefined, item.maCombo == null ? 'HinhAnh/Products' : 'HinhAnh/AnhCombo', item.tenHinhAnh)"
                         alt=""
                         class="cart-product-image"
                         @click="toggleSelection(item.id)"

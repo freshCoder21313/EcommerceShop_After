@@ -5,6 +5,7 @@ import EditCombo from '../Combo/Edit.vue'
 import DetailCombo from '../Combo/Details.vue'
 import Swal from 'sweetalert2'
 import { GetApiUrl } from '../../../../src/constants/api.js'
+import pathReplaceImg from '@/utils/processPathImg'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router'
 import { decodeToken, validateToken } from '@/utils/auth'
@@ -378,7 +379,7 @@ watch(activeTab, () => {
             <td class="text-center">{{ combo.maCombo }}</td>
             <td class="text-center">{{ combo.tenCombo }}</td>
             <td class="text-center">
-              <img :src="getUrlAPI + '/HinhAnh/AnhCombo/' + combo.hinh" alt="Combo Image" width="50" height="50"
+              <img :src="pathReplaceImg(undefined, 'HinhAnh/AnhCombo', combo.hinh)" alt="Combo Image" width="50" height="50"
                 style="object-fit: cover; border-radius: 5px" />
             </td>
             <td class="text-center">{{ combo.soLuong }}</td>
