@@ -402,7 +402,7 @@ export default {
       if (!form.email?.trim()) {
         errors.email = 'Email không được để trống'
         isValid = false
-      } else if (!/^[^\s@]+@[^\s@]+\.com$/.test(form.email.trim())) {
+      } else if (!/^[^S@]+@[^S@]+\.com$/.test(form.email.trim())) {
         errors.email = 'Email phải có định dạng @.com'
         isValid = false
       }
@@ -567,8 +567,7 @@ export default {
               const fileName = imagePath.split('/').pop()
               imagePreview.value = pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', fileName)
             } else {
-              imagePreview.value = `${apiUrl.value}/api/${imagePath.startsWith('/') ? '' : '/'
-                }${imagePath}`
+              imagePreview.value = `${apiUrl.value}/api/${imagePath.startsWith('/') ? '' : '/'}${imagePath}`
             }
           } else {
             imagePreview.value = ''
@@ -590,12 +589,12 @@ export default {
       isSubmitting,
       imagePreview,
       handleFileUpload,
-      handlePhoneInput,  // Added this
+      handlePhoneInput,
       handlePhoneBlur,
       submitForm,
       cancelForm,
       validateCCCD,
-      validatePhoneInput, // Added this
+      validatePhoneInput,
     }
   },
 }
@@ -690,8 +689,7 @@ export default {
   /* Giảm padding */
 }
 
-.left-column,
-.right-column {
+.left-column, .right-column {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -863,8 +861,7 @@ export default {
   /* Sử dụng border-top giống StaffForm */
 }
 
-.btn-cancel,
-.btn-submit {
+.btn-cancel, .btn-submit {
   padding: 0.6rem 1.2rem;
   /* Giảm padding */
   border-radius: 0.375rem;
@@ -969,8 +966,7 @@ export default {
     gap: 0.5rem;
   }
 
-  .btn-cancel,
-  .btn-submit {
+  .btn-cancel, .btn-submit {
     width: 100%;
     font-size: 0.85rem;
     padding: 0.5rem;

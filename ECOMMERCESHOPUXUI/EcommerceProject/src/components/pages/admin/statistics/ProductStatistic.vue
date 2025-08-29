@@ -51,205 +51,191 @@
   </div>
 </template>
 
-<script>
-import { Chart, registerables } from 'chart.js'
-import { formatCurrency } from '@/constants/formatCurrency'
-import Overlay from '@/components/common/Overlay.vue'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-Chart.register(...registerables)
+<script setup>
+import { ref, computed, watch, onMounted, nextTick, defineProps } from 'vue';
+import { Chart, registerables } from 'chart.js';
+import { formatCurrency } from '@/constants/formatCurrency';
+import Overlay from '@/components/common/Overlay.vue';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 
-export default {
-  name: 'ProductStatistic',
-  components: { Overlay, LoadingSpinner },
-  props: {
+Chart.register(...registerables);
+
+const props = defineProps({
+  data: {
+    default: () => ({}),
+  },
+  isLoading: {
+    type: Boolean,
+    default: true,
+  },
+});
+
+const productChart = ref(null);
+const salesQuantityChart = ref(null);
+const selectedTimePeriod = ref('date');
+const hasSalesChartData = ref(true);
+
+const summaryList = computed(() => {
+  return [
+    { label: 'Tổng doanh thu', value: formatCurrency(props.data?.totalRevenue ?? 0) },
+    { label: 'Tổng giảm giá', value: formatCurrency(props.data?.totalDiscount ?? 0) },
+    { label: 'Giá trung bình', value: formatCurrency(props.data?.averagePrice ?? 0) },
+  ];
+});
+
+const updateSalesChart = () => {
+  let canvasId = '';
+  if (selectedTimePeriod.value === 'date') {
+    canvasId = 'salesQuantityChartByDay';
+  } else if (selectedTimePeriod.value === 'month') {
+    canvasId = 'salesQuantityChartByMonth';
+  } else if (selectedTimePeriod.value === 'year') {
+    canvasId = 'salesQuantityChartByYear';
+  }
+
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (salesQuantityChart.value) {
+    salesQuantityChart.value.destroy();
+  }
+
+  let salesData = [];
+  let labels = [];
+  let revenueData = [];
+  let quantityData = [];
+
+  if (selectedTimePeriod.value === 'date') {
+    salesData = props.data.salesByTimes?.date || [];
+    labels = salesData.map((item) => item.date.split('T')[0]);
+    revenueData = salesData.map((item) => item.revenue);
+    quantityData = salesData.map((item) => item.count);
+  } else if (selectedTimePeriod.value === 'month') {
+    salesData = props.data.salesByTimes?.month || [];
+    labels = salesData.map((item) => `${item.month}/${item.year}`);
+    revenueData = salesData.map((item) => item.revenue);
+    quantityData = salesData.map((item) => item.count);
+  } else if (selectedTimePeriod.value === 'year') {
+    salesData = props.data.salesByTimes?.year || [];
+    labels = salesData.map((item) => item.year);
+    revenueData = salesData.map((item) => item.revenue);
+    quantityData = salesData.map((item) => item.count);
+  }
+
+  hasSalesChartData.value =
+    salesData &&
+    salesData.length > 0 &&
+    (revenueData.some((v) => v > 0) || quantityData.some((v) => v > 0));
+
+  if (!hasSalesChartData.value) {
+    labels = [''];
+    revenueData = [0];
+    quantityData = [0];
+  }
+
+  salesQuantityChart.value = new Chart(ctx, {
+    type: 'bar',
     data: {
-      default: () => ({}),
+      labels: labels,
+      datasets: [
+        {
+          label: 'Doanh thu',
+          data: revenueData,
+          type: 'line',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderWidth: 2,
+          fill: true,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Số lượng bán',
+          data: quantityData,
+          type: 'bar',
+          backgroundColor: 'rgba(255, 206, 86, 0.7)',
+          borderColor: 'rgba(255, 206, 86, 1)',
+          borderWidth: 1,
+          yAxisID: 'y1',
+        },
+      ],
     },
-    isLoading: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  data() {
-    return {
-      productChart: null,
-      salesQuantityChart: null,
-      selectedTimePeriod: 'date',
-      hasSalesChartData: true,
-    }
-  },
-  computed: {
-    summaryList() {
-      return [
-        { label: 'Tổng doanh thu', value: this.formatCurrency(this.data?.totalRevenue ?? 0) },
-        { label: 'Tổng giảm giá', value: this.formatCurrency(this.data?.totalDiscount ?? 0) },
-        { label: 'Giá trung bình', value: this.formatCurrency(this.data?.averagePrice ?? 0) },
-      ]
-    },
-  },
-  watch: {
-    isLoading(newVal) {
-      if (!newVal) {
-        this.$nextTick(() => {
-          this.updateSalesChart()
-        })
-      }
-    },
-    data: {
-      handler() {
-        if (!this.isLoading) {
-          this.$nextTick(() => {
-            this.updateSalesChart()
-          })
-        }
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Doanh thu',
+          },
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          grid: {
+            drawOnChartArea: false,
+          },
+          title: {
+            display: true,
+            text: 'Số lượng bán',
+          },
+        },
       },
-      deep: true,
-    },
-  },
-  mounted() {
-    if (!this.isLoading) {
-      this.updateSalesChart()
-    }
-  },
-  methods: {
-    formatCurrency,
-    updateSalesChart() {
-      let canvasId = ''
-      if (this.selectedTimePeriod === 'date') {
-        canvasId = 'salesQuantityChartByDay'
-      } else if (this.selectedTimePeriod === 'month') {
-        canvasId = 'salesQuantityChartByMonth'
-      } else if (this.selectedTimePeriod === 'year') {
-        canvasId = 'salesQuantityChartByYear'
-      }
-
-      const canvas = document.getElementById(canvasId)
-      if (!canvas) return
-      const ctx = canvas.getContext('2d')
-      if (this.salesQuantityChart) {
-        this.salesQuantityChart.destroy()
-      }
-
-      let salesData = []
-      let labels = []
-      let revenueData = []
-      let quantityData = []
-
-      // Lấy dữ liệu theo khoảng thời gian đã chọn
-      if (this.selectedTimePeriod === 'date') {
-        salesData = this.data.salesByTimes?.date || []
-        labels = salesData.map((item) => item.date.split('T')[0])
-        revenueData = salesData.map((item) => item.revenue)
-        quantityData = salesData.map((item) => item.count)
-      } else if (this.selectedTimePeriod === 'month') {
-        salesData = this.data.salesByTimes?.month || []
-        labels = salesData.map((item) => `${item.month}/${item.year}`)
-        revenueData = salesData.map((item) => item.revenue)
-        quantityData = salesData.map((item) => item.count)
-      } else if (this.selectedTimePeriod === 'year') {
-        salesData = this.data.salesByTimes?.year || []
-        labels = salesData.map((item) => item.year)
-        revenueData = salesData.map((item) => item.revenue)
-        quantityData = salesData.map((item) => item.count)
-      }
-
-      // Kiểm tra dữ liệu để hiển thị overlay
-      this.hasSalesChartData =
-        salesData &&
-        salesData.length > 0 &&
-        (revenueData.some((v) => v > 0) || quantityData.some((v) => v > 0))
-
-      // Nếu không có dữ liệu, tạo biểu đồ trắng với khung hình
-      if (!this.hasSalesChartData) {
-        labels = ['']
-        revenueData = [0]
-        quantityData = [0]
-      }
-
-      this.salesQuantityChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Doanh thu',
-              data: revenueData,
-              type: 'line',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              borderWidth: 2,
-              fill: true,
-              yAxisID: 'y',
-            },
-            {
-              label: 'Số lượng bán',
-              data: quantityData,
-              type: 'bar',
-              backgroundColor: 'rgba(255, 206, 86, 0.7)',
-              borderColor: 'rgba(255, 206, 86, 1)',
-              borderWidth: 1,
-              yAxisID: 'y1',
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              position: 'left',
-              title: {
-                display: true,
-                text: 'Doanh thu',
-              },
-            },
-            y1: {
-              beginAtZero: true,
-              position: 'right',
-              grid: {
-                drawOnChartArea: false,
-              },
-              title: {
-                display: true,
-                text: 'Số lượng bán',
-              },
-            },
-          },
-          plugins: {
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: {
-                label: function (context) {
-                  let label = context.dataset.label || ''
-                  if (label) {
-                    label += ': '
-                  }
-                  if (context.parsed.y !== null) {
-                    label += context.parsed.y
-                  }
-                  return label
-                },
-              },
-            },
-            legend: {
-              display: true,
-            },
-            title: {
-              display: true,
-              text: 'Doanh thu và số lượng bán theo thời gian',
-              font: {
-                size: 16,
-              },
+      plugins: {
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed.y !== null) {
+                label += context.parsed.y;
+              }
+              return label;
             },
           },
         },
-      })
+        legend: {
+          display: true,
+        },
+        title: {
+          display: true,
+          text: 'Doanh thu và số lượng bán theo thời gian',
+          font: {
+            size: 16,
+          },
+        },
+      },
     },
-  },
-}
+  });
+};
+
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal) {
+    nextTick(() => {
+      updateSalesChart();
+    });
+  }
+});
+
+watch(() => props.data, () => {
+  if (!props.isLoading) {
+    nextTick(() => {
+      updateSalesChart();
+    });
+  }
+}, { deep: true });
+
+onMounted(() => {
+  if (!props.isLoading) {
+    updateSalesChart();
+  }
+});
 </script>
-
 
 <style scoped>
 canvas {

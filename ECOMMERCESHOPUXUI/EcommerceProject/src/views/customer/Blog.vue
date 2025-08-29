@@ -13,40 +13,35 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'Blog',
-  data() {
-    return {
-      posts: [
-        {
-          id: 1,
-          title: 'Xu hướng thời trang Thu/Đông 2025: Những gam màu lên ngôi',
-          date: 'August 1, 2025',
-          excerpt: 'Khám phá những gam màu chủ đạo và phong cách thiết kế sẽ thống trị sàn diễn thời trang trong mùa Thu/Đông năm nay. Từ những tông màu trầm ấm đến các sắc thái nổi bật, hãy cùng EcommerceShop cập nhật tủ đồ của bạn.'
-        },
-        {
-          id: 2,
-          title: 'Bí quyết phối đồ công sở thanh lịch và hiện đại',
-          date: 'July 25, 2025',
-          excerpt: 'Làm thế nào để vừa chuyên nghiệp vừa thể hiện cá tính tại nơi làm việc? Bài viết này sẽ chia sẻ những bí quyết phối đồ công sở giúp bạn tự tin và nổi bật mỗi ngày.'
-        },
-        {
-          id: 3,
-          title: 'Chăm sóc trang phục đúng cách: Giữ quần áo luôn bền đẹp',
-          date: 'July 18, 2025',
-          excerpt: 'Quần áo là khoản đầu tư, và việc chăm sóc đúng cách sẽ giúp chúng bền đẹp theo thời gian. Tìm hiểu các mẹo giặt ủi, bảo quản và sửa chữa trang phục từ chuyên gia của chúng tôi.'
-        },
-        {
-          id: 4,
-          title: 'Làm thế nào để chọn size quần áo phù hợp khi mua sắm online?',
-          date: 'July 10, 2025',
-          excerpt: 'Mua sắm online tiện lợi nhưng chọn size luôn là thách thức. Bài viết này sẽ hướng dẫn bạn cách đo cơ thể và sử dụng bảng size để tìm được trang phục vừa vặn nhất.'
-        }
-      ]
-    }
+<script setup>
+import { ref } from 'vue';
+
+const posts = ref([
+  {
+    id: 1,
+    title: 'Xu hướng thời trang Thu/Đông 2025: Những gam màu lên ngôi',
+    date: 'August 1, 2025',
+    excerpt: 'Khám phá những gam màu chủ đạo và phong cách thiết kế sẽ thống trị sàn diễn thời trang trong mùa Thu/Đông năm nay. Từ những tông màu trầm ấm đến các sắc thái nổi bật, hãy cùng EcommerceShop cập nhật tủ đồ của bạn.'
+  },
+  {
+    id: 2,
+    title: 'Bí quyết phối đồ công sở thanh lịch và hiện đại',
+    date: 'July 25, 2025',
+    excerpt: 'Làm thế nào để vừa chuyên nghiệp vừa thể hiện cá tính tại nơi làm việc? Bài viết này sẽ chia sẻ những bí quyết phối đồ công sở giúp bạn tự tin và nổi bật mỗi ngày.'
+  },
+  {
+    id: 3,
+    title: 'Chăm sóc trang phục đúng cách: Giữ quần áo luôn bền đẹp',
+    date: 'July 18, 2025',
+    excerpt: 'Quần áo là khoản đầu tư, và việc chăm sóc đúng cách sẽ giúp chúng bền đẹp theo thời gian. Tìm hiểu các mẹo giặt ủi, bảo quản và sửa chữa trang phục từ chuyên gia của chúng tôi.'
+  },
+  {
+    id: 4,
+    title: 'Làm thế nào để chọn size quần áo phù hợp khi mua sắm online?',
+    date: 'July 10, 2025',
+    excerpt: 'Mua sắm online tiện lợi nhưng chọn size luôn là thách thức. Bài viết này sẽ hướng dẫn bạn cách đo cơ thể và sử dụng bảng size để tìm được trang phục vừa vặn nhất.'
   }
-}
+]);
 </script>
 
 <style scoped>

@@ -20,8 +20,7 @@
                 <li class="list-inline-item mx-3">
                   <p class="text-black">Giá trị mua hàng TB</p>
                   <h4 class="text-primary-gradient mb-3">
-                    <i class="icon-wallet mr-2"></i
-                    >{{ formatCurrency(data?.averagePurchaseAmount) }}
+                    <i class="icon-wallet mr-2"></i>{{ formatCurrency(data?.averagePurchaseAmount) }}
                   </h4>
                 </li>
                 <li class="list-inline-item mx-3">
@@ -37,7 +36,7 @@
           <div class="col-md-6">
             <!-- Khung biểu đồ -->
             <div class="chart-container">
-              <canvas ref="customerChart" v-show="!isLoading"></canvas>
+              <canvas ref="customerChartCanvas" v-show="!isLoading"></canvas>
               <div v-if="isLoading" class="text-center my-4">
                 <LoadingSpinner />
               </div>
@@ -49,121 +48,109 @@
   </div>
 </template>
 
-<script>
-import { Chart, registerables } from 'chart.js'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import NoDataMessage from '@/components/common/NoDataMessage.vue'
+<script setup>
+import { ref, watch, onMounted, nextTick, defineProps } from 'vue';
+import { Chart, registerables } from 'chart.js';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import NoDataMessage from '@/components/common/NoDataMessage.vue';
+import { formatCurrency } from '@/constants/formatCurrency';
 
-import { formatCurrency } from '@/constants/formatCurrency'
-Chart.register(...registerables)
+Chart.register(...registerables);
 
-export default {
-  name: 'CustomerStatistic',
-  components: {
-    LoadingSpinner,
-    NoDataMessage,
+const props = defineProps({
+  data: {
+    default: () => ({}),
   },
-  props: {
+  isLoading: {
+    type: Boolean,
+    default: true,
+  },
+});
+
+const customerChart = ref(null);
+const customerChartCanvas = ref(null);
+
+const renderCustomerChart = () => {
+  const canvas = customerChartCanvas.value;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (customerChart.value) {
+    customerChart.value.destroy();
+  }
+  const labels = ['Hoạt động', 'Không hoạt động'];
+  const dataValues = [
+    props.data?.totalActiveCustomers ?? 0,
+    props.data?.totalInactiveCustomers ?? 0,
+  ];
+  customerChart.value = new Chart(ctx, {
+    type: 'doughnut',
     data: {
-      default: () => ({}),
-    },
-    isLoading: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  data() {
-    return {
-      customerChart: null,
-    }
-  },
-  watch: {
-    isLoading(newVal) {
-      if (!newVal) {
-        this.$nextTick(() => this.renderCustomerChart())
-      }
-    },
-    data: {
-      handler() {
-        if (!this.isLoading) {
-          this.$nextTick(() => this.renderCustomerChart())
-        }
-      },
-      deep: true,
-    },
-  },
-  mounted() {
-    if (!this.isLoading) {
-      this.renderCustomerChart()
-    }
-  },
-  methods: {
-    formatCurrency,
-    renderCustomerChart() {
-      const canvas = this.$refs.customerChart
-      if (!canvas) return
-      const ctx = canvas.getContext('2d')
-      if (this.customerChart) {
-        this.customerChart.destroy()
-      }
-      const labels = ['Hoạt động', 'Không hoạt động']
-      const dataValues = [
-        this.data?.totalActiveCustomers ?? 0,
-        this.data?.totalInactiveCustomers ?? 0,
-      ]
-      this.customerChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Số lượng khách hàng',
-              data: dataValues,
-              backgroundColor: ['rgba(75, 192, 192, 0.7)', 'rgba(255, 99, 132, 0.7)'],
-              borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
-              borderWidth: 1,
-            },
-          ],
+      labels: labels,
+      datasets: [
+        {
+          label: 'Số lượng khách hàng',
+          data: dataValues,
+          backgroundColor: ['rgba(75, 192, 192, 0.7)', 'rgba(255, 99, 132, 0.7)'],
+          borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+          borderWidth: 1,
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: {
-                  size: 14,
-                },
-              },
-            },
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  let label = context.label || ''
-                  if (label) {
-                    label += ': '
-                  }
-                  if (context.parsed !== null) {
-                    label += context.parsed
-                  }
-                  return label
-                },
-              },
-            },
-            title: {
-              display: true,
-              text: 'Số lượng khách hàng hoạt động/không hoạt động',
-              font: {
-                size: 16,
-              },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: {
+              size: 14,
             },
           },
         },
-      })
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed !== null) {
+                label += context.parsed;
+              }
+              return label;
+            },
+          },
+        },
+        title: {
+          display: true,
+          text: 'Số lượng khách hàng hoạt động/không hoạt động',
+          font: {
+            size: 16,
+          },
+        },
+      },
     },
-  },
-}
+  });
+};
+
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal) {
+    nextTick(() => renderCustomerChart());
+  }
+});
+
+watch(() => props.data, () => {
+  if (!props.isLoading) {
+    nextTick(() => renderCustomerChart());
+  }
+}, { deep: true });
+
+onMounted(() => {
+  if (!props.isLoading) {
+    renderCustomerChart();
+  }
+});
 </script>
 
 <style scoped>

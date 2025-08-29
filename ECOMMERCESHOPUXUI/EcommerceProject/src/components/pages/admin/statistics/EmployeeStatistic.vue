@@ -66,7 +66,7 @@
               <canvas
                 v-for="period in periods"
                 :key="period.value"
-                :ref="`chart_${period.value}`"
+                :ref="el => chartRefs[period.value] = el"
                 v-show="selectedPeriod === period.value"
               ></canvas>
             </div>
@@ -97,110 +97,99 @@
   </div>
 </template>
 
-<script>
-import { Chart, registerables } from 'chart.js'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import NoDataMessage from '@/components/common/NoDataMessage.vue'
-import { formatCurrency } from '@/constants/formatCurrency'
+<script setup>
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, defineProps } from 'vue';
+import { Chart, registerables } from 'chart.js';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import NoDataMessage from '@/components/common/NoDataMessage.vue';
+import { formatCurrency } from '@/constants/formatCurrency';
 
-Chart.register(...registerables)
+Chart.register(...registerables);
 
-export default {
-  name: 'EmployeeStatistic',
-  components: { LoadingSpinner, NoDataMessage },
-  props: {
-    data: { default: () => ({}) },
-    isLoading: { type: Boolean, default: false },
-  },
-  data() {
-    return {
-      selectedPeriod: 'daily',
-      chartInstances: {},
-      periods: [
-        { label: 'Ngày', value: 'daily' },
-        { label: 'Tuần', value: 'weekly' },
-        { label: 'Tháng', value: 'monthly' },
-        { label: 'Năm', value: 'yearly' },
-      ],
-    }
-  },
-  watch: {
+const props = defineProps({
+  data: { default: () => ({}) },
+  isLoading: { type: Boolean, default: false },
+});
+
+const selectedPeriod = ref('daily');
+const chartInstances = ref({});
+const chartRefs = ref({});
+const periods = [
+  { label: 'Ngày', value: 'daily' },
+  { label: 'Tuần', value: 'weekly' },
+  { label: 'Tháng', value: 'monthly' },
+  { label: 'Năm', value: 'yearly' },
+];
+
+const renderAllCharts = () => {
+  periods.forEach(({ value }) => renderChart(value));
+};
+
+const renderChart = (period) => {
+  const canvas = chartRefs.value[period];
+  if (!canvas || !props.data?.revenueByTime?.[period]) return;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (chartInstances.value[period]) {
+    chartInstances.value[period].destroy();
+  }
+
+  const chartData = props.data.revenueByTime[period] || [];
+
+  chartInstances.value[period] = new Chart(ctx, {
+    type: 'bar',
     data: {
-      handler() {
-        this.$nextTick(this.renderAllCharts)
+      labels: chartData.map((d) => d.label),
+      datasets: [
+        {
+          label: `Doanh thu (${period})`,
+          data: chartData.map((d) => d.revenue),
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { enabled: true },
       },
-      deep: true,
-    },
-    isLoading(newVal) {
-      if (!newVal) {
-        this.$nextTick(this.renderAllCharts)
-      }
-    },
-  },
-  mounted() {
-    if (!this.isLoading) {
-      this.renderAllCharts()
-    }
-  },
-  beforeUnmount() {
-    Object.values(this.chartInstances).forEach(chart => chart.destroy?.())
-  },
-  methods: {
-    formatCurrency,
-    renderAllCharts() {
-      this.periods.forEach(({ value }) => this.renderChart(value))
-    },
-    renderChart(period) {
-      const canvasArray = this.$refs[`chart_${period}`]
-      const canvas = Array.isArray(canvasArray) ? canvasArray[0] : canvasArray
-
-      if (!canvas || !this.data?.revenueByTime?.[period]) return
-
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      // Hủy biểu đồ cũ nếu có
-      if (this.chartInstances[period]) {
-        this.chartInstances[period].destroy()
-      }
-
-      const chartData = this.data.revenueByTime[period] || []
-
-      this.chartInstances[period] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: chartData.map((d) => d.label),
-          datasets: [
-            {
-              label: `Doanh thu (${period})`,
-              data: chartData.map((d) => d.revenue),
-              backgroundColor: 'rgba(75, 192, 192, 0.7)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'top' },
-            tooltip: { enabled: true },
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Doanh thu (VNĐ)',
-              },
-            },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Doanh thu (VNĐ)',
           },
         },
-      })
-    }
+      },
+    },
+  });
+};
 
-  },
-}
+watch(() => props.data, () => {
+  nextTick(renderAllCharts);
+}, { deep: true });
+
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal) {
+    nextTick(renderAllCharts);
+  }
+});
+
+onMounted(() => {
+  if (!props.isLoading) {
+    renderAllCharts();
+  }
+});
+
+onBeforeUnmount(() => {
+  Object.values(chartInstances.value).forEach(chart => chart.destroy?.());
+});
 </script>
 
 <style scoped>

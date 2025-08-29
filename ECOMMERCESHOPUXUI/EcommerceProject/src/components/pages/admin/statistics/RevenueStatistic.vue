@@ -64,216 +64,195 @@
   </div>
 </template>
 
-<script>
-import { formatCurrency } from '@/constants/formatCurrency'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import NoDataMessage from '@/components/common/NoDataMessage.vue'
-import { Chart, registerables } from 'chart.js'
-Chart.register(...registerables)
+<script setup>
+import { ref, computed, watch, onMounted, nextTick, defineProps } from 'vue';
+import { formatCurrency } from '@/constants/formatCurrency';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import NoDataMessage from '@/components/common/NoDataMessage.vue';
+import { Chart, registerables } from 'chart.js';
 
-export default {
-  name: 'RevenueStatistic',
-  components: {
-    LoadingSpinner,
-    NoDataMessage,
+Chart.register(...registerables);
+
+const props = defineProps({
+  data: {
+    default: () => ({}),
   },
-  props: {
-    data: {
-      default: () => ({}),
-    },
-    isLoading: {
-      type: Boolean,
-      default: true,
-    },
+  isLoading: {
+    type: Boolean,
+    default: true,
   },
-  data() {
-    return {
-      hasSummaryData: false,
-    }
-  },
-  computed: {
-    summaryList() {
-      return [
-        { label: 'Tổng doanh thu', value: this.formatCurrency(this.data?.totalRevenue) },
-        { label: 'Doanh thu TB ngày', value: this.formatCurrency(this.data?.averageDailyRevenue) },
-        {
-          label: 'Doanh thu TB tháng',
-          value: this.formatCurrency(this.data?.averageMonthlyRevenue),
-        },
-        { label: 'Doanh thu cao nhất', value: this.formatCurrency(this.data?.highestRevenue) },
-        { label: 'Doanh thu thấp nhất', value: this.formatCurrency(this.data?.lowestRevenue) },
-      ]
+});
+
+const hasSummaryData = ref(false);
+let summaryRevenueChart = null;
+let customerChart = null;
+let productChart = null;
+let orderChart = null;
+
+const summaryList = computed(() => {
+  return [
+    { label: 'Tổng doanh thu', value: formatCurrency(props.data?.totalRevenue) },
+    { label: 'Doanh thu TB ngày', value: formatCurrency(props.data?.averageDailyRevenue) },
+    {
+      label: 'Doanh thu TB tháng',
+      value: formatCurrency(props.data?.averageMonthlyRevenue),
     },
-  },
-  watch: {
-    isLoading(newVal) {
-      if (!newVal && this.data) {
-        this.$nextTick(() => {
-          this.renderCharts()
-        })
-      }
-    },
-    data: {
-      handler() {
-        if (!this.isLoading) {
-          this.$nextTick(() => {
-            this.renderCharts()
-          })
-        }
+    { label: 'Doanh thu cao nhất', value: formatCurrency(props.data?.highestRevenue) },
+    { label: 'Doanh thu thấp nhất', value: formatCurrency(props.data?.lowestRevenue) },
+  ];
+});
+
+const renderCharts = () => {
+  if (summaryRevenueChart) summaryRevenueChart.destroy();
+  if (customerChart) customerChart.destroy();
+  if (productChart) productChart.destroy();
+  if (orderChart) orderChart.destroy();
+
+  const summaryData = [
+    { label: 'Tổng doanh thu', value: props.data.totalRevenue || 0 },
+    { label: 'TB ngày', value: props.data.averageDailyRevenue || 0 },
+    { label: 'TB tháng', value: props.data.averageMonthlyRevenue || 0 },
+    { label: 'Cao nhất', value: props.data.highestRevenue || 0 },
+    { label: 'Thấp nhất', value: props.data.lowestRevenue || 0 },
+  ];
+  hasSummaryData.value = summaryData.length > 0;
+  if (hasSummaryData.value) {
+    const summaryLabels = summaryData.map((item) => item.label);
+    const summaryValues = summaryData.map((item) => item.value);
+    summaryRevenueChart = new Chart(document.getElementById('summaryRevenueChart'), {
+      type: 'bar',
+      data: {
+        labels: summaryLabels,
+        datasets: [
+          {
+            label: 'Tổng quan doanh thu',
+            data: summaryValues,
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
+              'rgba(255, 205, 86, 0.6)',
+              'rgba(255, 99, 132, 0.6)',
+            ],
+          },
+        ],
       },
-      deep: true,
-    },
-  },
-  mounted() {
-    if (!this.isLoading && this.data) {
-      this.renderCharts()
-    }
-  },
-  methods: {
-    formatCurrency,
-    renderCharts() {
-      // Destroy existing charts to prevent memory leaks
-      if (this.summaryRevenueChart) this.summaryRevenueChart.destroy()
-      if (this.customerChart) this.customerChart.destroy()
-      if (this.productChart) this.productChart.destroy()
-      if (this.orderChart) this.orderChart.destroy()
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+  }
 
-      // --- Summary Revenue Chart ---
-      // NOTE: Uses summary statistics for total, average daily, monthly, highest, and lowest revenue
-      const summaryData = [
-        { label: 'Tổng doanh thu', value: this.data.totalRevenue || 0 },
-        { label: 'TB ngày', value: this.data.averageDailyRevenue || 0 },
-        { label: 'TB tháng', value: this.data.averageMonthlyRevenue || 0 },
-        { label: 'Cao nhất', value: this.data.highestRevenue || 0 },
-        { label: 'Thấp nhất', value: this.data.lowestRevenue || 0 },
-      ]
-      this.hasSummaryData = summaryData.length > 0
-      if (this.hasSummaryData) {
-        const summaryLabels = summaryData.map((item) => item.label)
-        const summaryValues = summaryData.map((item) => item.value)
-        this.summaryRevenueChart = new Chart(document.getElementById('summaryRevenueChart'), {
-          type: 'bar',
-          data: {
-            labels: summaryLabels,
-            datasets: [
-              {
-                label: 'Tổng quan doanh thu',
-                data: summaryValues,
-                backgroundColor: [
-                  'rgba(54, 162, 235, 0.6)',
-                  'rgba(75, 192, 192, 0.6)',
-                  'rgba(153, 102, 255, 0.6)',
-                  'rgba(255, 205, 86, 0.6)',
-                  'rgba(255, 99, 132, 0.6)',
-                ],
-              },
+  const customerData = props.data.topCustomers || [];
+  if (customerData.length > 0) {
+    const customerLabels = customerData.slice(0, 5).map((item) => item.name);
+    const customerValues = customerData.slice(0, 5).map((item) => item.totalSpent);
+    customerChart = new Chart(document.getElementById('customerChart'), {
+      type: 'doughnut',
+      data: {
+        labels: customerLabels,
+        datasets: [
+          {
+            label: 'Chi tiêu khách hàng',
+            data: customerValues,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.6)',
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(255, 206, 86, 0.6)',
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
             ],
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } },
-          },
-        })
-      }
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+      },
+    });
+  }
 
-      // --- Customer Chart ---
-      // NOTE: Assumes data.topCustomers is an array of { name: string, totalSpent: number }
-      const customerData = this.data.topCustomers || []
-      this.hasCustomerData = customerData.length > 0
-      if (this.hasCustomerData) {
-        const customerLabels = customerData.slice(0, 5).map((item) => item.name)
-        const customerValues = customerData.slice(0, 5).map((item) => item.totalSpent)
-        this.customerChart = new Chart(document.getElementById('customerChart'), {
-          type: 'doughnut',
-          data: {
-            labels: customerLabels,
-            datasets: [
-              {
-                label: 'Chi tiêu khách hàng',
-                data: customerValues,
-                backgroundColor: [
-                  'rgba(255, 99, 132, 0.6)',
-                  'rgba(54, 162, 235, 0.6)',
-                  'rgba(255, 206, 86, 0.6)',
-                  'rgba(75, 192, 192, 0.6)',
-                  'rgba(153, 102, 255, 0.6)',
-                ],
-              },
+  const productData = props.data.topProducts || [];
+  if (productData.length > 0) {
+    const productLabels = productData.slice(0, 5).map((item) => item.name);
+    const productValues = productData.slice(0, 5).map((item) => item.totalSold);
+    productChart = new Chart(document.getElementById('productChart'), {
+      type: 'pie',
+      data: {
+        labels: productLabels,
+        datasets: [
+          {
+            label: 'Sản phẩm bán chạy',
+            data: productValues,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.6)',
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(255, 206, 86, 0.6)',
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
             ],
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-          },
-        })
-      }
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+      },
+    });
+  }
 
-      // --- Product Chart ---
-      // NOTE: Assumes data.topProducts is an array of { name: string, totalSold: number }
-      const productData = this.data.topProducts || []
-      this.hasProductData = productData.length > 0
-      if (this.hasProductData) {
-        const productLabels = productData.slice(0, 5).map((item) => item.name)
-        const productValues = productData.slice(0, 5).map((item) => item.totalSold)
-        this.productChart = new Chart(document.getElementById('productChart'), {
-          type: 'pie',
-          data: {
-            labels: productLabels,
-            datasets: [
-              {
-                label: 'Sản phẩm bán chạy',
-                data: productValues,
-                backgroundColor: [
-                  'rgba(255, 99, 132, 0.6)',
-                  'rgba(54, 162, 235, 0.6)',
-                  'rgba(255, 206, 86, 0.6)',
-                  'rgba(75, 192, 192, 0.6)',
-                  'rgba(153, 102, 255, 0.6)',
-                ],
-              },
-            ],
+  const orderData = props.data.orderStatusCount || [];
+  if (orderData.length > 0) {
+    const orderLabels = orderData.map((item) => item.status);
+    const orderValues = orderData.map((item) => item.count);
+    orderChart = new Chart(document.getElementById('orderChart'), {
+      type: 'bar',
+      data: {
+        labels: orderLabels,
+        datasets: [
+          {
+            label: 'Đơn hàng theo trạng thái',
+            data: orderValues,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-          },
-        })
-      }
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { display: false } },
+      },
+    });
+  }
+};
 
-      // --- Order Chart ---
-      // NOTE: Assumes data.orderStatusCount is an array of { status: string, count: number }
-      const orderData = this.data.orderStatusCount || []
-      this.hasOrderData = orderData.length > 0
-      if (this.hasOrderData) {
-        const orderLabels = orderData.map((item) => item.status)
-        const orderValues = orderData.map((item) => item.count)
-        this.orderChart = new Chart(document.getElementById('orderChart'), {
-          type: 'bar',
-          data: {
-            labels: orderLabels,
-            datasets: [
-              {
-                label: 'Đơn hàng theo trạng thái',
-                data: orderValues,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false }, y: { display: false } },
-          },
-        })
-      }
-    },
-  },
-}
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal && props.data) {
+    nextTick(() => {
+      renderCharts();
+    });
+  }
+});
+
+watch(() => props.data, () => {
+  if (!props.isLoading) {
+    nextTick(() => {
+      renderCharts();
+    });
+  }
+}, { deep: true });
+
+onMounted(() => {
+  if (!props.isLoading && props.data) {
+    renderCharts();
+  }
+});
 </script>
 
 <style scoped>

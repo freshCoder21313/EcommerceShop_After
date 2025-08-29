@@ -33,80 +33,58 @@
   </div>
 </template>
 
-<script>
-import Overlay from '@/components/common/Overlay.vue'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import NoDataMessage from '@/components/common/NoDataMessage.vue'
-import { Chart, registerables } from 'chart.js'
+<script setup>
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, defineProps } from 'vue';
+import Overlay from '@/components/common/Overlay.vue';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import NoDataMessage from '@/components/common/NoDataMessage.vue';
+import { Chart, registerables } from 'chart.js';
 
-Chart.register(...registerables)
+Chart.register(...registerables);
 
-export default {
-  name: 'ReviewAnalysis',
-  components: { Overlay, LoadingSpinner, NoDataMessage },
-  props: {
-    data: { default: () => ({}) },
-    isLoading: { type: Boolean, default: false },
-  },
-  data() {
-    return {
-      reviewChart: null,
+const props = defineProps({
+  data: { default: () => ({}) },
+  isLoading: { type: Boolean, default: false },
+});
+
+const reviewChart = ref(null);
+const reviewRatingChartCanvas = ref(null);
+
+const renderChart = () => {
+  const canvas = reviewRatingChartCanvas.value;
+  if (!canvas) return;
+  const context = canvas.getContext('2d');
+  if (!context) return;
+
+  if (!props.data || (!props.data.highestRatedProduct && !props.data.lowestRatedProduct && !props.data.mostReviewedProduct)) {
+    if (reviewChart.value) {
+      reviewChart.value.destroy();
+      reviewChart.value = null;
     }
-  },
-  watch: {
-    isLoading(newVal) {
-      if (!newVal) this.$nextTick(this.renderChart)
-    },
-    data: {
-      handler() {
-        this.$nextTick(this.renderChart)
-      },
-      deep: true,
-    },
-  },
-  mounted() {
-    if (!this.isLoading) {
-      this.$nextTick(this.renderChart)
-    }
-  },
-  beforeUnmount() {
-    this.reviewChart?.destroy()
-  },
-  methods: {
-    renderChart() {
-  const canvas = this.$refs.reviewRatingChartCanvas
-  if (!canvas) return
-  const context = canvas.getContext('2d')
-  if (!context) return
-
-  if (!this.data || (!this.data.highestRatedProduct && !this.data.lowestRatedProduct && !this.data.mostReviewedProduct)) {
-    this.reviewChart?.destroy()
-    this.reviewChart = null
-    return
+    return;
   }
 
-  // Tạo dữ liệu biểu đồ từ 3 sản phẩm
   const entries = [
     {
       label: 'Cao nhất',
-      product: this.data.highestRatedProduct,
+      product: props.data.highestRatedProduct,
       color: 'rgba(75, 192, 192, 0.7)',
     },
     {
       label: 'Thấp nhất',
-      product: this.data.lowestRatedProduct,
+      product: props.data.lowestRatedProduct,
       color: 'rgba(255, 99, 132, 0.7)',
     },
     {
       label: 'Nhiều nhất',
-      product: this.data.mostReviewedProduct,
+      product: props.data.mostReviewedProduct,
       color: 'rgba(255, 206, 86, 0.7)',
     },
-  ].filter(e => e.product && typeof e.product.averageRating === 'number')
+  ].filter(e => e.product && typeof e.product.averageRating === 'number');
 
-  const labels = entries.map(e => `${e.label}: ${e.product.productName}`)
-  const dataValues = entries.map(e => e.product.averageRating)
-  const backgroundColors = entries.map(e => e.color)
+  const labels = entries.map(e => `${e.label}: ${e.product.productName}`);
+  const dataValues = entries.map(e => e.product.averageRating);
+  const backgroundColors = entries.map(e => e.color);
 
   const chartData = {
     labels,
@@ -119,7 +97,7 @@ export default {
         borderWidth: 1,
       },
     ],
-  }
+  };
 
   const chartOptions = {
     indexAxis: 'y',
@@ -144,21 +122,38 @@ export default {
         font: { size: 16, weight: 'bold' },
       },
     },
+  };
+
+  if (reviewChart.value) {
+    reviewChart.value.destroy();
   }
 
-  if (this.reviewChart) {
-    this.reviewChart.destroy()
-  }
-
-  this.reviewChart = new Chart(context, {
+  reviewChart.value = new Chart(context, {
     type: 'bar',
     data: chartData,
     options: chartOptions,
-  })
-}
+  });
+};
 
-  },
-}
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal) nextTick(renderChart);
+});
+
+watch(() => props.data, () => {
+  nextTick(renderChart);
+}, { deep: true });
+
+onMounted(() => {
+  if (!props.isLoading) {
+    nextTick(renderChart);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (reviewChart.value) {
+    reviewChart.value.destroy();
+  }
+});
 </script>
 
 <style scoped>

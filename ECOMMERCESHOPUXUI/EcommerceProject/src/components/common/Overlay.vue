@@ -19,33 +19,31 @@ Cách dùng 2: Overlay che phủ toàn trang
   </div>
 </template>
 
-<script>
-export default {
-  name: 'OverlayComponent',
-  props: {
-    isVisible: {
-      type: Boolean,
-      default: false,
-    },
-    imageSrc: {
-      type: String,
-      default: '',
-    },
-    overlayContent: {
-      type: String,
-      default: '',
-    },
-    isCoverPage: {
-      type: Boolean,
-      default: false, // Mặc định là không bao phủ toàn trang
-    },
+<script setup>
+import { defineProps, computed } from 'vue';
+
+const props = defineProps({
+  isVisible: {
+    type: Boolean,
+    default: false,
   },
-  computed: {
-    overlayClass() {
-      return this.isCoverPage ? 'overlay-full' : 'overlay-partial'
-    },
+  imageSrc: {
+    type: String,
+    default: '',
   },
-}
+  overlayContent: {
+    type: String,
+    default: '',
+  },
+  isCoverPage: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const overlayClass = computed(() => {
+  return props.isCoverPage ? 'overlay-full' : 'overlay-partial';
+});
 </script>
 
 <style scoped>

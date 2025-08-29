@@ -12,10 +12,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'CardDiscordInvite',
-}
+<script setup>
 </script>
 
 <style scoped>

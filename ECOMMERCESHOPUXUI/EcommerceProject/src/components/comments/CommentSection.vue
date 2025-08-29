@@ -122,176 +122,167 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
 import { commentService } from '@/services/commentService';
 import Swal from 'sweetalert2';
 import EmptySuggestBox from '@/components/common/EmptySuggestBox.vue';
 import Cookies from 'js-cookie';
 import pathReplaceImg from '@/utils/processPathImg';
 
-export default {
-  name: 'CommentSection',
-  components: { EmptySuggestBox },
-  props: {
-    objectId: {
-      type: [String, Number],
-      required: true,
-    },
-    objectType: {
-      type: String,
-      required: true,
-      validator: (value) => ['product', 'combo'].includes(value),
-    },
+const props = defineProps({
+  objectId: {
+    type: [String, Number],
+    required: true,
   },
-  emits: [],
-  data() {
-    return {
-      comments: [],
-      loading: false,
-      isSubmitting: false,
-      isSubmittingReply: false,
-      newCommentContent: '',
-      replyingToCommentId: null,
-      replyContent: '',
-      currentPage: 1,
-      itemsPerPage: 5,
-    };
+  objectType: {
+    type: String,
+    required: true,
+    validator: (value) => ['product', 'combo'].includes(value),
   },
-  computed: {
-    isAuthenticated() {
-      return !!Cookies.get('accessToken');
-    },
-    totalPages() {
-      return Math.ceil(this.comments.length / this.itemsPerPage);
-    },
-    paginatedComments() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      return this.comments.slice(start, start + this.itemsPerPage);
-    },
-  },
-  watch: {
-    objectId: {
-      handler() {
-        this.fetchComments();
-      },
-      immediate: true,
-    },
-    objectType: {
-      handler() {
-        this.fetchComments();
-      },
-      immediate: true,
-    },
-  },
-  methods: {
-    pathReplaceImg,
-    async fetchComments() {
-      if (!this.objectId || !this.objectType) return;
-      this.loading = true;
-      try {
-        const response = await commentService.getCommentsByObjectIdAndType(this.objectId, this.objectType);
-        if (response.success) {
-          const sortComments = (commentList) => {
-            commentList.sort((a, b) => new Date(b.ngayBinhLuan) - new Date(a.ngayBinhLuan));
-            commentList.forEach(comment => {
-              if (comment.replies && comment.replies.length > 0) {
-                sortComments(comment.replies);
-              }
-            });
-          };
-          sortComments(response.data);
-          this.comments = response.data;
-        } else {
-          Swal.fire('Lỗi', 'Không thể tải được danh sách bình luận.', 'error');
-        }
-      } catch (error) {
-        Swal.fire('Lỗi', 'Đã xảy ra lỗi khi tải bình luận.', 'error');
-      } finally {
-        this.loading = false;
-      }
-    },
-    async addComment() {
-      if (!this.newCommentContent.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Vui lòng nhập nội dung bình luận', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-        return;
-      }
-      this.isSubmitting = true;
+});
 
-      const commentData = {
-        noiDung: this.newCommentContent.trim(),
-        parentId: null,
-        [this.objectType === 'product' ? 'maSP' : 'maCombo']: this.objectId,
+const comments = ref([]);
+const loading = ref(false);
+const isSubmitting = ref(false);
+const isSubmittingReply = ref(false);
+const newCommentContent = ref('');
+const replyingToCommentId = ref(null);
+const replyContent = ref('');
+const currentPage = ref(1);
+const itemsPerPage = ref(5);
+
+const isAuthenticated = computed(() => !!Cookies.get('accessToken'));
+
+const totalPages = computed(() => {
+  return Math.ceil(comments.value.length / itemsPerPage.value);
+});
+
+const paginatedComments = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return comments.value.slice(start, start + itemsPerPage.value);
+});
+
+const fetchComments = async () => {
+  if (!props.objectId || !props.objectType) return;
+  loading.value = true;
+  try {
+    const response = await commentService.getCommentsByObjectIdAndType(props.objectId, props.objectType);
+    if (response.success) {
+      const sortComments = (commentList) => {
+        commentList.sort((a, b) => new Date(b.ngayBinhLuan) - new Date(a.ngayBinhLuan));
+        commentList.forEach(comment => {
+          if (comment.replies && comment.replies.length > 0) {
+            sortComments(comment.replies);
+          }
+        });
       };
-
-      try {
-        const response = await commentService.addComment(commentData);
-        if (!response.success) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Lỗi không xác định từ máy chủ.');
-        }
-        if (response.success) {
-          this.newCommentContent = '';
-          Swal.fire({ icon: 'success', title: 'Bình luận đã được gửi', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-          this.fetchComments(); // Refresh comments after adding
-        } else {
-          Swal.fire('Lỗi', response.message || 'Không thể gửi bình luận.', 'error');
-        }
-      } catch (error) {
-        Swal.fire('Lỗi', error.message || 'Đã xảy ra lỗi khi gửi bình luận.', 'error');
-      } finally {
-        this.isSubmitting = false;
-      }
-    },
-    async submitReply(parentId) {
-      if (!this.replyContent.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Vui lòng nhập nội dung trả lời', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-        return;
-      }
-      this.isSubmittingReply = true;
-
-      const replyData = {
-        noiDung: this.replyContent.trim(),
-        parentId: parentId,
-        [this.objectType === 'product' ? 'maSP' : 'maCombo']: this.objectId,
-      };
-
-      try {
-        const response = await commentService.addComment(replyData);
-        if (response.success) {
-          this.cancelReply();
-          Swal.fire({ icon: 'success', title: 'Đã gửi câu trả lời', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-          this.fetchComments(); // Refresh comments after adding reply
-        } else {
-          Swal.fire('Lỗi', response.message || 'Không thể gửi câu trả lời.', 'error');
-        }
-      } catch (error) {
-        Swal.fire('Lỗi', 'Đã xảy ra lỗi khi gửi câu trả lời.', 'error');
-      } finally {
-        this.isSubmittingReply = false;
-      }
-    },
-    startReply(commentId) {
-      this.replyingToCommentId = commentId;
-      this.replyContent = '';
-    },
-    cancelReply() {
-      this.replyingToCommentId = null;
-      this.replyContent = '';
-    },
-    changePage(page) {
-      if (page >= 1 && page <= this.totalPages) this.currentPage = page;
-    },
-    formatDate(dateString) {
-      if (!dateString) return '';
-      return new Date(dateString).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    },
-  },
-  mounted() {
-    if (this.objectId && this.objectType) {
-      this.fetchComments();
+      sortComments(response.data);
+      comments.value = response.data;
+    } else {
+      Swal.fire('Lỗi', 'Không thể tải được danh sách bình luận.', 'error');
     }
-  },
+  } catch (error) {
+    Swal.fire('Lỗi', 'Đã xảy ra lỗi khi tải bình luận.', 'error');
+  } finally {
+    loading.value = false;
+  }
 };
+
+const addComment = async () => {
+  if (!newCommentContent.value.trim()) {
+    Swal.fire({ icon: 'warning', title: 'Vui lòng nhập nội dung bình luận', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    return;
+  }
+  isSubmitting.value = true;
+
+  const commentData = {
+    noiDung: newCommentContent.value.trim(),
+    parentId: null,
+    [props.objectType === 'product' ? 'maSP' : 'maCombo']: props.objectId,
+  };
+
+  try {
+    const response = await commentService.addComment(commentData);
+    if (!response.success) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Lỗi không xác định từ máy chủ.');
+    }
+    if (response.success) {
+      newCommentContent.value = '';
+      Swal.fire({ icon: 'success', title: 'Bình luận đã được gửi', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+      fetchComments(); // Refresh comments after adding
+    } else {
+      Swal.fire('Lỗi', response.message || 'Không thể gửi bình luận.', 'error');
+    }
+  } catch (error) {
+    Swal.fire('Lỗi', error.message || 'Đã xảy ra lỗi khi gửi bình luận.', 'error');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const submitReply = async (parentId) => {
+  if (!replyContent.value.trim()) {
+    Swal.fire({ icon: 'warning', title: 'Vui lòng nhập nội dung trả lời', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    return;
+  }
+  isSubmittingReply.value = true;
+
+  const replyData = {
+    noiDung: replyContent.value.trim(),
+    parentId: parentId,
+    [props.objectType === 'product' ? 'maSP' : 'maCombo']: props.objectId,
+  };
+
+  try {
+    const response = await commentService.addComment(replyData);
+    if (response.success) {
+      cancelReply();
+      Swal.fire({ icon: 'success', title: 'Đã gửi câu trả lời', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+      fetchComments(); // Refresh comments after adding reply
+    } else {
+      Swal.fire('Lỗi', response.message || 'Không thể gửi câu trả lời.', 'error');
+    }
+  } catch (error) {
+    Swal.fire('Lỗi', 'Đã xảy ra lỗi khi gửi câu trả lời.', 'error');
+  } finally {
+    isSubmittingReply.value = false;
+  }
+};
+
+const startReply = (commentId) => {
+  replyingToCommentId.value = commentId;
+  replyContent.value = '';
+};
+
+const cancelReply = () => {
+  replyingToCommentId.value = null;
+  replyContent.value = '';
+};
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) currentPage.value = page;
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+watch(() => props.objectId, () => {
+  fetchComments();
+}, { immediate: true });
+
+watch(() => props.objectType, () => {
+  fetchComments();
+}, { immediate: true });
+
+onMounted(() => {
+  if (props.objectId && props.objectType) {
+    fetchComments();
+  }
+});
 </script>
 
 <style scoped>

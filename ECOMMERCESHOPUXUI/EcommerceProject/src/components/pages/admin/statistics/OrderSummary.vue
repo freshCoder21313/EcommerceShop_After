@@ -107,311 +107,304 @@
   </div>
 </template>
 
-<script>
-import Overlay from '@/components/common/Overlay.vue'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import NoDataMessage from '@/components/common/NoDataMessage.vue'
+<script setup>
+import { ref, watch, onMounted, nextTick, defineProps } from 'vue';
+import Overlay from '@/components/common/Overlay.vue';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import NoDataMessage from '@/components/common/NoDataMessage.vue';
+import { Chart, registerables } from 'chart.js';
+import { formatCurrency } from '@/constants/formatCurrency';
 
-import { Chart, registerables } from 'chart.js'
-import { formatCurrency } from '@/constants/formatCurrency'
-Chart.register(...registerables)
+Chart.register(...registerables);
 
-export default {
-  name: 'OrderSummary',
-  components: { Overlay, LoadingSpinner, NoDataMessage },
-  props: {
+const props = defineProps({
+  data: {
+    default: () => ({}),
+  },
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const selectedTimePeriod = ref('date');
+const revenueChartByTime = ref(null);
+const orderStatusChart = ref(null);
+const totalOrders = ref(0);
+const totalRevenue = ref(0);
+const averageOrderValue = ref(0);
+const hasRevenueChartData = ref(true);
+const hasOrderStatusChartData = ref(true);
+
+const updateCharts = () => {
+  calculateOverviewData();
+  checkChartData();
+  renderCharts();
+};
+
+const calculateOverviewData = () => {
+  let statusDataByTime;
+  switch (selectedTimePeriod.value) {
+    case 'date': {
+      statusDataByTime = props.data.revenueByTime?.date ?? [];
+      break;
+    }
+    case 'month': {
+      statusDataByTime = props.data.revenueByTime?.month ?? [];
+      break;
+    }
+    case 'year': {
+      statusDataByTime = props.data.revenueByTime?.year ?? [];
+      break;
+    }
+  }
+  totalOrders.value = statusDataByTime.reduce((acc, item) => acc + item.count, 0);
+  totalRevenue.value = statusDataByTime.reduce((acc, item) => acc + item.revenue, 0);
+  averageOrderValue.value = totalOrders.value > 0 ? totalRevenue.value / totalOrders.value : 0;
+};
+
+const checkChartData = () => {
+  let revenueData = [];
+  if (selectedTimePeriod.value === 'date') {
+    revenueData = props.data?.revenueByTime?.['date'] ?? [];
+  } else if (selectedTimePeriod.value === 'month') {
+    revenueData = props.data?.revenueByTime?.['month'] ?? [];
+  } else {
+    revenueData = props.data?.revenueByTime?.['year'] ?? [];
+  }
+  hasRevenueChartData.value =
+    revenueData &&
+    revenueData.length > 0 &&
+    revenueData.some((item) => item.revenue > 0 || item.count > 0);
+
+  let statusData = [];
+  if (selectedTimePeriod.value === 'date') {
+    statusData = props.data?.orderStatusStatistics?.['date'] ?? [];
+  } else if (selectedTimePeriod.value === 'month') {
+    statusData = props.data?.orderStatusStatistics?.['month'] ?? [];
+  } else {
+    statusData = props.data?.orderStatusStatistics?.['year'] ?? [];
+  }
+  hasOrderStatusChartData.value =
+    statusData && statusData.length > 0 && statusData.some((item) => item.count > 0);
+};
+
+const renderCharts = () => {
+  if (selectedTimePeriod.value === 'date') {
+    renderRevenueChart('revenueChartByDay');
+    renderOrderStatusChart('orderStatusChartByDay');
+  } else if (selectedTimePeriod.value === 'month') {
+    renderRevenueChart('revenueChartByMonth');
+    renderOrderStatusChart('orderStatusChartByMonth');
+  } else if (selectedTimePeriod.value === 'year') {
+    renderRevenueChart('revenueChartByYear');
+    renderOrderStatusChart('orderStatusChartByYear');
+  }
+};
+
+const renderRevenueChart = async (chartId) => {
+  await nextTick();
+  const ctx = document.getElementById(chartId);
+
+  const context = ctx.getContext('2d');
+  if (revenueChartByTime.value) {
+    revenueChartByTime.value.destroy();
+  }
+
+  let revenueData = [],
+    countData = [],
+    labels = [];
+  if (selectedTimePeriod.value === 'date' && props.data?.revenueByTime?.['date']) {
+    revenueData = props.data.revenueByTime['date'].map((item) => item.revenue);
+    countData = props.data.revenueByTime['date'].map((item) => item.count);
+    labels = props.data.revenueByTime['date'].map((item) => item.date.split('T')[0]);
+  } else if (selectedTimePeriod.value === 'month' && props.data?.revenueByTime?.['month']) {
+    revenueData = props.data.revenueByTime['month'].map((item) => item.revenue);
+    countData = props.data.revenueByTime['month'].map((item) => item.count);
+    labels = props.data.revenueByTime['month'].map((item) => `${item.month}/${item.year}`);
+  } else if (selectedTimePeriod.value === 'year' && props.data?.revenueByTime?.['year']) {
+    revenueData = props.data.revenueByTime['year'].map((item) => item.revenue);
+    countData = props.data.revenueByTime['year'].map((item) => item.count);
+    labels = props.data.revenueByTime['year'].map((item) => item.year);
+  }
+
+  revenueChartByTime.value = new Chart(context, {
+    type: 'bar',
     data: {
-      default: () => ({}),
+      labels: labels,
+      datasets: [
+        {
+          label: 'Doanh thu',
+          data: revenueData,
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+          type: 'line',
+          yAxisID: 'y-revenue',
+        },
+        {
+          label: 'Số lượng đơn hàng',
+          data: countData,
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+          type: 'bar',
+          yAxisID: 'y-count',
+        },
+      ],
     },
-    isLoading: {
-      type: Boolean,
-      default: false,
+    options: {
+      responsive: true,
+      scales: {
+        'y-revenue': {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Doanh thu',
+          },
+        },
+        'y-count': {
+          beginAtZero: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Số lượng đơn hàng',
+          },
+        },
+      },
+      plugins: {
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed.y !== null) {
+                label += context.parsed.y;
+              }
+              return label;
+            },
+          },
+        },
+        legend: {
+          display: true,
+        },
+        title: {
+          display: true,
+          text: 'Doanh thu và số lượng đơn hàng',
+          font: {
+            size: 16,
+          },
+        },
+      },
     },
-  },
-  data() {
-    return {
-      selectedTimePeriod: 'date',
-      revenueChartByTime: null,
-      orderStatusChart: null,
-      totalOrders: 0,
-      totalRevenue: 0,
-      averageOrderValue: 0,
-      hasRevenueChartData: true,
-      hasOrderStatusChartData: true,
+  });
+};
+
+const renderOrderStatusChart = async (chartId) => {
+  await nextTick();
+  const ctx = document.getElementById(chartId);
+
+  const context = ctx.getContext('2d');
+  if (orderStatusChart.value) {
+    orderStatusChart.value.destroy();
+  }
+
+  let statusDataByTime;
+  switch (selectedTimePeriod.value) {
+    case 'date': {
+      statusDataByTime = props.data.orderStatusStatistics.date;
+      break;
     }
-  },
-  watch: {
-    isLoading(newVal) {
-      if (!newVal) {
-        this.$nextTick(() => {
-          this.updateCharts()
-        })
-      }
-    },
-  },
-  mounted() {
-    if (!this.isLoading) {
-      this.updateCharts()
+    case 'month': {
+      statusDataByTime = props.data.orderStatusStatistics.month;
+      break;
     }
-  },
-  methods: {
-    formatCurrency,
-    updateCharts() {
-      this.calculateOverviewData()
-      this.checkChartData()
-      this.renderCharts()
-    },
-    calculateOverviewData() {
-      var statusDataByTime
-      switch (this.selectedTimePeriod) {
-        case 'date': {
-          statusDataByTime = this.data.revenueByTime?.date ?? []
-          break
-        }
-        case 'month': {
-          statusDataByTime = this.data.revenueByTime?.month ?? []
-          break
-        }
-        case 'year': {
-          statusDataByTime = this.data.revenueByTime?.year ?? []
-          break
-        }
-      }
-      this.totalOrders = statusDataByTime.reduce((acc, item) => acc + item.count, 0)
-      this.totalRevenue = statusDataByTime.reduce((acc, item) => acc + item.revenue, 0)
-      this.averageOrderValue = this.totalOrders > 0 ? this.totalRevenue / this.totalOrders : 0
-    },
-    checkChartData() {
-      // Kiểm tra dữ liệu doanh thu
-      let revenueData = []
-      if (this.selectedTimePeriod === 'date') {
-        revenueData = this.data?.revenueByTime?.['date'] ?? []
-      } else if (this.selectedTimePeriod === 'month') {
-        revenueData = this.data?.revenueByTime?.['month'] ?? []
-      } else {
-        revenueData = this.data?.revenueByTime?.['year'] ?? []
-      }
-      this.hasRevenueChartData =
-        revenueData &&
-        revenueData.length > 0 &&
-        revenueData.some((item) => item.revenue > 0 || item.count > 0)
+    case 'year': {
+      statusDataByTime = props.data.orderStatusStatistics.year;
+      break;
+    }
+  }
 
-      // Kiểm tra dữ liệu trạng thái đơn hàng
-      let statusData = []
-      if (this.selectedTimePeriod === 'date') {
-        statusData = this.data?.orderStatusStatistics?.['date'] ?? []
-      } else if (this.selectedTimePeriod === 'month') {
-        statusData = this.data?.orderStatusStatistics?.['month'] ?? []
-      } else {
-        statusData = this.data?.orderStatusStatistics?.['year'] ?? []
-      }
-      this.hasOrderStatusChartData =
-        statusData && statusData.length > 0 && statusData.some((item) => item.count > 0)
-    },
-    renderCharts() {
-      // Dựa vào selectedTimePeriod, render các biểu đồ tương ứng
-      if (this.selectedTimePeriod === 'date') {
-        this.renderRevenueChart('revenueChartByDay')
-        this.renderOrderStatusChart('orderStatusChartByDay')
-      } else if (this.selectedTimePeriod === 'month') {
-        this.renderRevenueChart('revenueChartByMonth')
-        this.renderOrderStatusChart('orderStatusChartByMonth')
-      } else if (this.selectedTimePeriod === 'year') {
-        this.renderRevenueChart('revenueChartByYear')
-        this.renderOrderStatusChart('orderStatusChartByYear')
-      }
-    },
-    async renderRevenueChart(chartId) {
-      await this.$nextTick()
-      const ctx = document.getElementById(chartId)
+  const statusData = statusDataByTime.map((item) => item.count);
+  const statusLabels = statusDataByTime.map((item) => item.status);
 
-      const context = ctx.getContext('2d')
-      if (this.revenueChartByTime) {
-        this.revenueChartByTime.destroy()
-      }
-
-      let revenueData = [],
-        countData = [],
-        labels = []
-      if (this.selectedTimePeriod === 'date' && this.data?.revenueByTime?.['date']) {
-        revenueData = this.data.revenueByTime['date'].map((item) => item.revenue)
-        countData = this.data.revenueByTime['date'].map((item) => item.count)
-        labels = this.data.revenueByTime['date'].map((item) => item.date.split('T')[0])
-      } else if (this.selectedTimePeriod === 'month' && this.data?.revenueByTime?.['month']) {
-        revenueData = this.data.revenueByTime['month'].map((item) => item.revenue)
-        countData = this.data.revenueByTime['month'].map((item) => item.count)
-        labels = this.data.revenueByTime['month'].map((item) => `${item.month}/${item.year}`)
-      } else if (this.selectedTimePeriod === 'year' && this.data?.revenueByTime?.['year']) {
-        revenueData = this.data.revenueByTime['year'].map((item) => item.revenue)
-        countData = this.data.revenueByTime['year'].map((item) => item.count)
-        labels = this.data.revenueByTime['year'].map((item) => item.year)
-      }
-
-      this.revenueChartByTime = new Chart(context, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Doanh thu',
-              data: revenueData,
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 1,
-              type: 'line',
-              yAxisID: 'y-revenue',
-            },
-            {
-              label: 'Số lượng đơn hàng',
-              data: countData,
-              backgroundColor: 'rgba(255, 99, 132, 0.2)',
-              borderColor: 'rgba(255, 99, 132, 1)',
-              borderWidth: 1,
-              type: 'bar',
-              yAxisID: 'y-count',
-            },
+  orderStatusChart.value = new Chart(context, {
+    type: 'pie',
+    data: {
+      labels: statusLabels,
+      datasets: [
+        {
+          label: 'Số lượng đơn hàng theo trạng thái',
+          data: statusData,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 206, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
+            'rgba(255, 159, 64, 0.2)',
           ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            'y-revenue': {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Doanh thu',
-              },
-            },
-            'y-count': {
-              beginAtZero: true,
-              position: 'right',
-              title: {
-                display: true,
-                text: 'Số lượng đơn hàng',
-              },
-            },
-          },
-          plugins: {
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: {
-                label: function (context) {
-                  let label = context.dataset.label || ''
-                  if (label) {
-                    label += ': '
-                  }
-                  if (context.parsed.y !== null) {
-                    label += context.parsed.y
-                  }
-                  return label
-                },
-              },
-            },
-            legend: {
-              display: true,
-            },
-            title: {
-              display: true,
-              text: 'Doanh thu và số lượng đơn hàng',
-              font: {
-                size: 16,
-              },
-            },
-          },
-        },
-      })
-    },
-    async renderOrderStatusChart(chartId) {
-      await this.$nextTick()
-      const ctx = document.getElementById(chartId)
-
-      const context = ctx.getContext('2d')
-      if (this.orderStatusChart) {
-        this.orderStatusChart.destroy()
-      }
-
-      var statusDataByTime
-      switch (this.selectedTimePeriod) {
-        case 'date': {
-          statusDataByTime = this.data.orderStatusStatistics.date
-          break
-        }
-        case 'month': {
-          statusDataByTime = this.data.orderStatusStatistics.month
-          break
-        }
-        case 'year': {
-          statusDataByTime = this.data.orderStatusStatistics.year
-          break
-        }
-      }
-
-      const statusData = statusDataByTime.map((item) => item.count)
-      const statusLabels = statusDataByTime.map((item) => item.status)
-
-      this.orderStatusChart = new Chart(context, {
-        type: 'pie',
-        data: {
-          labels: statusLabels,
-          datasets: [
-            {
-              label: 'Số lượng đơn hàng theo trạng thái',
-              data: statusData,
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-              ],
-              borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-              ],
-              borderWidth: 1,
-            },
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)',
           ],
+          borderWidth: 1,
         },
-        options: {
-          responsive: true,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function (tooltipItem) {
-                  const label = tooltipItem.label || ''
-                  const value = tooltipItem.raw || 0
-                  return `${label}: ${value}`
-                },
-              },
-            },
-            legend: {
-              position: 'right',
-              labels: {
-                font: {
-                  size: 14,
-                },
-              },
-            },
-            title: {
-              display: true,
-              text: 'Tỉ lệ trạng thái đơn hàng',
-              font: {
-                size: 16,
-              },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (tooltipItem) {
+              const label = tooltipItem.label || '';
+              const value = tooltipItem.raw || 0;
+              return `${label}: ${value}`;
             },
           },
         },
-      })
+        legend: {
+          position: 'right',
+          labels: {
+            font: {
+              size: 14,
+            },
+          },
+        },
+        title: {
+          display: true,
+          text: 'Tỉ lệ trạng thái đơn hàng',
+          font: {
+            size: 16,
+          },
+        },
+      },
     },
-  },
-  filters: {},
-}
+  });
+};
+
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal) {
+    nextTick(() => {
+      updateCharts();
+    });
+  }
+});
+
+onMounted(() => {
+  if (!props.isLoading) {
+    updateCharts();
+  }
+});
 </script>
 
 <style scoped>

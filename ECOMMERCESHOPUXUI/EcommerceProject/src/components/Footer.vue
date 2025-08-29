@@ -161,11 +161,7 @@
   </div>
 </template>
 
-<script>
-
-export default {
-  name: 'AppFooter',
-}
+<script setup>
 </script>
 
 <style scoped>

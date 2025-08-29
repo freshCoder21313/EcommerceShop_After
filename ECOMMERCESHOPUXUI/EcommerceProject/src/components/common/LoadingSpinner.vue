@@ -7,10 +7,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'LoadingSpinner',
-};
+<script setup>
 </script>
 
 <style scoped>

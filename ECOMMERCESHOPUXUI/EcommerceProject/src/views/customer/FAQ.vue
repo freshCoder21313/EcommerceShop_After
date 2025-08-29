@@ -67,10 +67,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'FAQ'
-}
+<script setup>
 </script>
 
 <style scoped>

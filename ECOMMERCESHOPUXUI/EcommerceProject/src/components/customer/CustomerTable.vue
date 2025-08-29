@@ -109,7 +109,7 @@
           </td>
           <td>
             <img :src="getImageUrl(customer.hinh)" alt="" />
-            <span class="customer-name" @click="showCustomerDetail(customer)">{{
+            <span class="customer-name" @click="showCustomerDetail(customer)">{{ 
               customer.hoTen
             }}</span>
           </td>
@@ -301,8 +301,8 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
+<script setup>
+import { ref, computed, onMounted, watch, defineEmits } from 'vue'
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/utils/auth'
@@ -311,73 +311,98 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import pathReplaceImg from '@/utils/processPathImg'
 
-export default {
-  name: 'CustomerTable',
-  emits: ['edit-customer', 'refresh-data'],
-  setup(props, { emit }) {
-    const accessToken = ref(Cookies.get('accessToken'))
-    const refreshToken = ref(Cookies.get('refreshToken'))
-    const readToken = ref({})
-    const router = useRouter()
-    const customers = ref([])
-    const searchQuery = ref('')
-    const sortColumn = ref('maKH')
-    const sortAsc = ref(true)
-    const showExportOptions = ref(false)
-    const apiUrl = ref(GetApiUrl())
-    const loading = ref(false)
-    const currentPage = ref(1)
-    const pageSize = ref(6)
-    const totalItems = ref(0)
-    const totalPages = ref(1)
-    const maxPagesToShow = ref(5)
-    const filterHoTen = ref('')
-    const filterGioiTinh = ref('')
-    const filterGmail = ref('')
-    const filterDienThoai = ref('')
-    const filterDiaChi = ref('')
-    const filterTinhTrang = ref('')
-    const showDetailModal = ref(false)
-    const selectedCustomer = ref(null)
-    // Biến cho chế độ xóa nhiều
-    const isDeleteMultipleMode = ref(false)
-    const selectAll = ref(false)
+const emit = defineEmits(['edit-customer', 'refresh-data'])
 
-    const showCustomerDetail = (customer) => {
-      selectedCustomer.value = { ...customer }
-      showDetailModal.value = true
+const accessToken = ref(Cookies.get('accessToken'))
+const refreshToken = ref(Cookies.get('refreshToken'))
+const readToken = ref({})
+const router = useRouter()
+const customers = ref([])
+const searchQuery = ref('')
+const sortColumn = ref('maKH')
+const sortAsc = ref(true)
+const showExportOptions = ref(false)
+const apiUrl = ref(GetApiUrl())
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(6)
+const totalItems = ref(0)
+const totalPages = ref(1)
+const maxPagesToShow = ref(5)
+const filterHoTen = ref('')
+const filterGioiTinh = ref('')
+const filterGmail = ref('')
+const filterDienThoai = ref('')
+const filterDiaChi = ref('')
+const filterTinhTrang = ref('')
+const showDetailModal = ref(false)
+const selectedCustomer = ref(null)
+const isDeleteMultipleMode = ref(false)
+const selectAll = ref(false)
+
+const showCustomerDetail = (customer) => {
+  selectedCustomer.value = { ...customer }
+  showDetailModal.value = true
+}
+
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  selectedCustomer.value = null
+}
+
+const fetchCustomers = async () => {
+  try {
+    const validatetoken = await validateToken(accessToken.value, refreshToken.value)
+    if (validatetoken.isValid == false) {
+      router.push('/Login')
+      return
     }
+    loading.value = true
+    accessToken.value = validatetoken.newAccessToken
+    Swal.fire({
+      title: 'Đang tải dữ liệu...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading()
+      },
+    })
 
-    const closeDetailModal = () => {
-      showDetailModal.value = false
-      selectedCustomer.value = null
-    }
+    filterHoTen.value = searchQuery.value
+    filterDiaChi.value = searchQuery.value
+    filterDienThoai.value = searchQuery.value
+    filterGmail.value = searchQuery.value
+    const response = await axios.get(`${apiUrl.value}/api/Customer`, {
+      params: {
+        pageSize: pageSize.value,
+        pageNumber: currentPage.value,
+        hoTen: filterHoTen.value,
+        gioiTinh: filterGioiTinh.value,
+        tinhTrang: filterTinhTrang.value,
+        isActive: true,
+        diaChi: filterDiaChi.value,
+        email: filterGmail.value,
+        sdt: filterDienThoai.value,
+      },
+      headers: {
+        Authorization: `Bearer ${accessToken.value}`,
+      },
+    })
 
-    const fetchCustomers = async () => {
+    customers.value = response.data.map((customer) => ({
+      ...customer,
+      isHidden: false,
+      delay: '0s',
+      backgroundColor: 'transparent',
+      isSelected: false,
+    }))
+
+    const totalCount = response.headers['x-total-count']
+    if (totalCount) {
+      totalItems.value = parseInt(totalCount)
+    } else {
       try {
-        const validatetoken = await validateToken(accessToken.value, refreshToken.value)
-        if (validatetoken.isValid == false) {
-          router.push('/Login')
-          return
-        }
-        loading.value = true
-        accessToken.value = validatetoken.newAccessToken
-        Swal.fire({
-          title: 'Đang tải dữ liệu...',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading()
-          },
-        })
-
-        filterHoTen.value = searchQuery.value
-        filterDiaChi.value = searchQuery.value
-        filterDienThoai.value = searchQuery.value
-        filterGmail.value = searchQuery.value
-        const response = await axios.get(`${apiUrl.value}/api/Customer`, {
+        const countResponse = await axios.get(`${apiUrl.value}/api/Customer/count`, {
           params: {
-            pageSize: pageSize.value,
-            pageNumber: currentPage.value,
             hoTen: filterHoTen.value,
             gioiTinh: filterGioiTinh.value,
             tinhTrang: filterTinhTrang.value,
@@ -390,254 +415,246 @@ export default {
             Authorization: `Bearer ${accessToken.value}`,
           },
         })
-
-        customers.value = response.data.map((customer) => ({
-          ...customer,
-          isHidden: false,
-          delay: '0s',
-          backgroundColor: 'transparent',
-          isSelected: false,
-        }))
-
-        const totalCount = response.headers['x-total-count']
-        if (totalCount) {
-          totalItems.value = parseInt(totalCount)
-        } else {
-          try {
-            const countResponse = await axios.get(`${apiUrl.value}/api/Customer/count`, {
-              params: {
-                hoTen: filterHoTen.value,
-                gioiTinh: filterGioiTinh.value,
-                tinhTrang: filterTinhTrang.value,
-                isActive: true,
-                diaChi: filterDiaChi.value,
-                email: filterGmail.value,
-                sdt: filterDienThoai.value,
-              },
-              headers: {
-                Authorization: `Bearer ${accessToken.value}`,
-              },
-            })
-            totalItems.value = countResponse.data
-          } catch (error) {
-            console.error('Lỗi khi lấy tổng số khách hàng:', error)
-            const itemsReturned = customers.value.length
-            if (itemsReturned < pageSize.value) {
-              totalItems.value = (currentPage.value - 1) * pageSize.value + itemsReturned
-            }
-          }
-        }
-
-        totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
-
-        searchTable()
-
-        Swal.close()
+        totalItems.value = countResponse.data
       } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu khách hàng:', error)
-        Swal.fire({
-          title: 'Lỗi!',
-          text: 'Không thể tải dữ liệu khách hàng. Vui lòng thử lại sau.',
-          icon: 'error',
-          confirmButtonColor: '#f44336',
-        })
-      } finally {
-        loading.value = false
+        console.error('Lỗi khi lấy tổng số khách hàng:', error)
+        const itemsReturned = customers.value.length
+        if (itemsReturned < pageSize.value) {
+          totalItems.value = (currentPage.value - 1) * pageSize.value + itemsReturned
+        }
       }
     }
 
-    const getImageUrl = (relativePath) => {
-      if (!relativePath) return 'Không ảnh'
-      return pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', relativePath)
+    totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
+
+    searchTable()
+
+    Swal.close()
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu khách hàng:', error)
+    Swal.fire({
+      title: 'Lỗi!',
+      text: 'Không thể tải dữ liệu khách hàng. Vui lòng thử lại sau.',
+      icon: 'error',
+      confirmButtonColor: '#f44336',
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+const getImageUrl = (relativePath) => {
+  if (!relativePath) return 'Không ảnh'
+  return pathReplaceImg(undefined, 'HinhAnh/AnhKhachHang', relativePath)
+}
+
+const displayedCustomers = computed(() => {
+  return customers.value
+})
+
+const displayedPages = computed(() => {
+  const maxPages = maxPagesToShow.value
+  const pages = []
+
+  if (totalPages.value <= maxPages) {
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    const halfMax = Math.floor(maxPages / 2)
+    let startPage = Math.max(currentPage.value - halfMax, 1)
+    let endPage = Math.min(startPage + maxPages - 1, totalPages.value)
+
+    if (endPage - startPage + 1 < maxPages) {
+      startPage = Math.max(endPage - maxPages + 1, 1)
     }
 
-    const displayedCustomers = computed(() => {
-      return customers.value
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+  }
+
+  return pages
+})
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    currentPage.value = page
+    fetchCustomers()
+  }
+}
+
+const onPageSizeChange = () => {
+  currentPage.value = 1
+  fetchCustomers()
+}
+
+const searchTable = () => {
+  const query = searchQuery.value.toLowerCase()
+  customers.value.forEach((customer, i) => {
+    const customerData = [
+      customer.hoTen?.toLowerCase() || '',
+      customer.sdt?.toLowerCase() || '',
+      customer.email?.toLowerCase() || '',
+      customer.diaChi?.toLowerCase() || '',
+    ].join(' ')
+
+    customer.isHidden = !customerData.includes(query)
+    customer.delay = i / 25 + 's'
+  })
+
+  const visibleRows = customers.value.filter((customer) => !customer.isHidden)
+  visibleRows.forEach((customer, i) => {
+    customer.backgroundColor = i % 2 === 0 ? 'transparent' : '#0000000b'
+  })
+}
+
+const sortTable = (column) => {
+  if (sortColumn.value === column) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortColumn.value = column
+    sortAsc.value = true
+  }
+
+  sortCustomers()
+}
+
+const sortCustomers = () => {
+  customers.value.sort((a, b) => {
+    const aValue = a[sortColumn.value]
+    const bValue = b[sortColumn.value]
+
+    if (sortColumn.value === 'ngaySinh') {
+      const dateA = new Date(aValue)
+      const dateB = new Date(bValue)
+      return sortAsc.value ? dateA - dateB : dateB - dateA
+    }
+
+    if (aValue < bValue) return sortAsc.value ? -1 : 1
+    if (aValue > bValue) return sortAsc.value ? 1 : -1
+    return 0
+  })
+
+  searchTable()
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('vi-VN')
+}
+
+const getStatusClass = (status) => {
+  if (!status) {
+    console.warn('Trạng thái rỗng hoặc không xác định:', status)
+    return 'unknown'
+  }
+  status = status.trim().toLowerCase()
+  if (status.includes('hoạt động')) return 'delivered'
+  if (status.includes('tạm khóa')) return 'cancelled'
+  if (status.includes('chờ')) return 'pending'
+  console.warn('Trạng thái không khớp:', status)
+  return 'unknown'
+}
+
+const exportToServer = (fileType) => {
+  let url = ''
+  if (fileType === 'pdf') {
+    url = `${apiUrl.value}/api/Customer/export/pdf`
+  } else if (fileType === 'excel') {
+    url = `${apiUrl.value}/api/Customer/export/excel`
+  }
+
+  Swal.fire({
+    title: `Đang xuất file ${fileType.toUpperCase()}...`,
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading()
+    },
+  })
+
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute(
+    'download',
+    fileType === 'pdf' ? 'DanhSachKhachHang.pdf' : 'DanhSachKhachHang.xlsx'
+  )
+  document.body.appendChild(link)
+
+  link.onload = () => {
+    Swal.close()
+  }
+
+  link.onerror = () => {
+    Swal.fire({
+      title: 'Lỗi!',
+      text: `Không thể tải xuống file ${fileType.toUpperCase()}.`,
+      icon: 'error',
+      confirmButtonColor: '#f44336',
+    })
+  }
+
+  link.click()
+  document.body.removeChild(link)
+  showExportOptions.value = false
+
+  setTimeout(() => {
+    Swal.close()
+  }, 9000)
+}
+
+const editCustomer = (id) => {
+  emit('edit-customer', id)
+}
+
+const deleteCustomer = async (id) => {
+  Swal.close()
+  const validatetoken = await validateToken(accessToken.value, refreshToken.value)
+  if (validatetoken.isValid == false) {
+    router.push('/Login')
+    return
+  } else {
+    accessToken.value = validatetoken.newAccessToken
+    const dialogResult = await Swal.fire({
+      title: 'Xác nhận xóa',
+      text: 'Bạn có chắc chắn muốn xóa khách hàng này không?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f44336',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Đồng ý, xóa!',
+      cancelButtonText: 'Hủy',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      backdrop: `rgba(0,0,0,0.7)`,
+      customClass: {
+        container: 'swal-overlay-container',
+        popup: 'swal-popup-priority',
+        title: 'swal-title',
+        content: 'swal-content',
+        confirmButton: 'swal-confirm',
+      },
+      target: document.body,
+      heightAuto: false,
+      onOpen: () => {
+        document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+      },
     })
 
-    const displayedPages = computed(() => {
-      const maxPages = maxPagesToShow.value
-      const pages = []
-
-      if (totalPages.value <= maxPages) {
-        for (let i = 1; i <= totalPages.value; i++) {
-          pages.push(i)
-        }
-      } else {
-        const halfMax = Math.floor(maxPages / 2)
-        let startPage = Math.max(currentPage.value - halfMax, 1)
-        let endPage = Math.min(startPage + maxPages - 1, totalPages.value)
-
-        if (endPage - startPage + 1 < maxPages) {
-          startPage = Math.max(endPage - maxPages + 1, 1)
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-          pages.push(i)
-        }
-      }
-
-      return pages
-    })
-
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
-        currentPage.value = page
-        fetchCustomers()
-      }
-    }
-
-    const onPageSizeChange = () => {
-      currentPage.value = 1
-      fetchCustomers()
-    }
-
-    const searchTable = () => {
-      const query = searchQuery.value.toLowerCase()
-      customers.value.forEach((customer, i) => {
-        const customerData = [
-          customer.hoTen?.toLowerCase() || '',
-          customer.sdt?.toLowerCase() || '',
-          customer.email?.toLowerCase() || '',
-          customer.diaChi?.toLowerCase() || '',
-        ].join(' ')
-
-        customer.isHidden = !customerData.includes(query)
-        customer.delay = i / 25 + 's'
-      })
-
-      const visibleRows = customers.value.filter((customer) => !customer.isHidden)
-      visibleRows.forEach((customer, i) => {
-        customer.backgroundColor = i % 2 === 0 ? 'transparent' : '#0000000b'
-      })
-    }
-
-    const sortTable = (column) => {
-      if (sortColumn.value === column) {
-        sortAsc.value = !sortAsc.value
-      } else {
-        sortColumn.value = column
-        sortAsc.value = true
-      }
-
-      sortCustomers()
-    }
-
-    const sortCustomers = () => {
-      customers.value.sort((a, b) => {
-        const aValue = a[sortColumn.value]
-        const bValue = b[sortColumn.value]
-
-        if (sortColumn.value === 'ngaySinh') {
-          const dateA = new Date(aValue)
-          const dateB = new Date(bValue)
-          return sortAsc.value ? dateA - dateB : dateB - dateA
-        }
-
-        if (aValue < bValue) return sortAsc.value ? -1 : 1
-        if (aValue > bValue) return sortAsc.value ? 1 : -1
-        return 0
-      })
-
-      searchTable()
-    }
-
-    const formatDate = (dateString) => {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return ''
-      return date.toLocaleDateString('vi-VN')
-    }
-
-    const getStatusClass = (status) => {
-      if (!status) {
-        console.warn('Trạng thái rỗng hoặc không xác định:', status)
-        return 'unknown'
-      }
-      status = status.trim().toLowerCase()
-      if (status.includes('hoạt động')) return 'delivered'
-      if (status.includes('tạm khóa')) return 'cancelled'
-      if (status.includes('chờ')) return 'pending'
-      console.warn('Trạng thái không khớp:', status)
-      return 'unknown'
-    }
-
-    const exportToServer = (fileType) => {
-      let url = ''
-      if (fileType === 'pdf') {
-        url = `${apiUrl.value}/api/Customer/export/pdf`
-      } else if (fileType === 'excel') {
-        url = `${apiUrl.value}/api/Customer/export/excel`
-      }
-
-      Swal.fire({
-        title: `Đang xuất file ${fileType.toUpperCase()}...`,
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading()
-        },
-      })
-
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute(
-        'download',
-        fileType === 'pdf' ? 'DanhSachKhachHang.pdf' : 'DanhSachKhachHang.xlsx'
-      )
-      document.body.appendChild(link)
-
-      link.onload = () => {
-        Swal.close()
-      }
-
-      link.onerror = () => {
+    if (dialogResult.isConfirmed) {
+      try {
         Swal.fire({
-          title: 'Lỗi!',
-          text: `Không thể tải xuống file ${fileType.toUpperCase()}.`,
-          icon: 'error',
-          confirmButtonColor: '#f44336',
-        })
-      }
-
-      link.click()
-      document.body.removeChild(link)
-      showExportOptions.value = false
-
-      setTimeout(() => {
-        Swal.close()
-      }, 9000)
-    }
-
-    const editCustomer = (id) => {
-      emit('edit-customer', id)
-    }
-
-    const deleteCustomer = async (id) => {
-      Swal.close()
-      const validatetoken = await validateToken(accessToken.value, refreshToken.value)
-      if (validatetoken.isValid == false) {
-        router.push('/Login')
-        return
-      } else {
-        accessToken.value = validatetoken.newAccessToken
-        const dialogResult = await Swal.fire({
-          title: 'Xác nhận xóa',
-          text: 'Bạn có chắc chắn muốn xóa khách hàng này không?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#f44336',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: 'Đồng ý, xóa!',
-          cancelButtonText: 'Hủy',
+          title: 'Đang xóa...',
           allowOutsideClick: false,
-          allowEscapeKey: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading()
+          },
           backdrop: `rgba(0,0,0,0.7)`,
           customClass: {
             container: 'swal-overlay-container',
-            popup: 'swal-popup-priority',
-            title: 'swal-title',
-            content: 'swal-content',
-            confirmButton: 'swal-confirm',
           },
           target: document.body,
           heightAuto: false,
@@ -646,114 +663,37 @@ export default {
           },
         })
 
-        if (dialogResult.isConfirmed) {
-          try {
-            Swal.fire({
-              title: 'Đang xóa...',
-              allowOutsideClick: false,
-              showConfirmButton: false,
-              willOpen: () => {
-                Swal.showLoading()
-              },
-              backdrop: `rgba(0,0,0,0.7)`,
-              customClass: {
-                container: 'swal-overlay-container',
-              },
-              target: document.body,
-              heightAuto: false,
-              onOpen: () => {
-                document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-              },
-            })
-
-            await axios.delete(`${apiUrl.value}/api/Customer/${id}`, {
-              headers: {
-                Authorization: `Bearer ${accessToken.value}`,
-              },
-            })
-
-            const index = customers.value.findIndex((customer) => customer.maKH === id)
-            if (index !== -1) {
-              customers.value[index].isHidden = true
-              await new Promise((resolve) => setTimeout(resolve, 500))
-              customers.value.splice(index, 1)
-            }
-
-            totalItems.value -= 1
-            totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
-
-            if (customers.value.length === 0 && currentPage.value > 1) {
-              currentPage.value -= 1
-              await fetchCustomers()
-            } else {
-              searchTable()
-            }
-
-            Swal.close()
-            setTimeout(() => {
-              Swal.fire({
-                title: 'Đã xóa!',
-                text: 'Khách hàng đã được xóa thành công.',
-                icon: 'success',
-                confirmButtonColor: '#4CAF50',
-                timer: 3000,
-                backdrop: `rgba(0,0,0,0.7)`,
-                customClass: {
-                  container: 'swal-overlay-container',
-                  popup: 'swal-popup-priority',
-                },
-                target: document.body,
-                heightAuto: false,
-                onOpen: () => {
-                  document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                },
-              })
-            }, 300)
-
-            emit('refresh-data')
-          } catch (error) {
-            console.error('Lỗi khi xóa khách hàng:', error)
-            Swal.close()
-            setTimeout(() => {
-              Swal.fire({
-                title: 'Lỗi!',
-                text: 'Không thể xóa khách hàng. Vui lòng thử lại sau.',
-                icon: 'error',
-                confirmButtonColor: '#f44336',
-                timer: 3000,
-                backdrop: `rgba(0,0,0,0.7)`,
-                customClass: {
-                  container: 'swal-overlay-container',
-                  popup: 'swal-popup-priority',
-                },
-                target: document.body,
-                heightAuto: false,
-                onOpen: () => {
-                  document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                },
-              })
-            }, 300)
-          }
-        }
-      }
-    }
-
-    const toggleDeleteMultiple = async () => {
-      if (!isDeleteMultipleMode.value) {
-        isDeleteMultipleMode.value = true
-        customers.value.forEach((customer) => {
-          customer.isSelected = false
+        await axios.delete(`${apiUrl.value}/api/Customer/${id}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken.value}`,
+          },
         })
-        selectAll.value = false
-        showExportOptions.value = false
-      } else {
-        const selectedCustomers = customers.value.filter((customer) => customer.isSelected)
-        if (selectedCustomers.length === 0) {
+
+        const index = customers.value.findIndex((customer) => customer.maKH === id)
+        if (index !== -1) {
+          customers.value[index].isHidden = true
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          customers.value.splice(index, 1)
+        }
+
+        totalItems.value -= 1
+        totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
+
+        if (customers.value.length === 0 && currentPage.value > 1) {
+          currentPage.value -= 1
+          await fetchCustomers()
+        } else {
+          searchTable()
+        }
+
+        Swal.close()
+        setTimeout(() => {
           Swal.fire({
-            title: 'Chưa chọn khách hàng',
-            text: 'Vui lòng chọn ít nhất một khách hàng để xóa.',
-            icon: 'warning',
-            confirmButtonColor: '#f44336',
+            title: 'Đã xóa!',
+            text: 'Khách hàng đã được xóa thành công.',
+            icon: 'success',
+            confirmButtonColor: '#4CAF50',
+            timer: 3000,
             backdrop: `rgba(0,0,0,0.7)`,
             customClass: {
               container: 'swal-overlay-container',
@@ -765,27 +705,104 @@ export default {
               document.querySelector('.swal-overlay-container').style.zIndex = '999999'
             },
           })
-          return
-        }
+        }, 300)
 
-        const dialogResult = await Swal.fire({
-          title: 'Xác nhận xóa nhiều',
-          text: `Bạn có chắc chắn muốn xóa ${selectedCustomers.length} khách hàng đã chọn không?`,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#f44336',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: 'Đồng ý, xóa!',
-          cancelButtonText: 'Hủy',
+        emit('refresh-data')
+      } catch (error) {
+        console.error('Lỗi khi xóa khách hàng:', error)
+        Swal.close()
+        setTimeout(() => {
+          Swal.fire({
+            title: 'Lỗi!',
+            text: 'Không thể xóa khách hàng. Vui lòng thử lại sau.',
+            icon: 'error',
+            confirmButtonColor: '#f44336',
+            timer: 3000,
+            backdrop: `rgba(0,0,0,0.7)`,
+            customClass: {
+              container: 'swal-overlay-container',
+              popup: 'swal-popup-priority',
+            },
+            target: document.body,
+            heightAuto: false,
+            onOpen: () => {
+              document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+            },
+          })
+        }, 300)
+      }
+    }
+  }
+}
+
+const toggleDeleteMultiple = async () => {
+  if (!isDeleteMultipleMode.value) {
+    isDeleteMultipleMode.value = true
+    customers.value.forEach((customer) => {
+      customer.isSelected = false
+    })
+    selectAll.value = false
+    showExportOptions.value = false
+  } else {
+    const selectedCustomers = customers.value.filter((customer) => customer.isSelected)
+    if (selectedCustomers.length === 0) {
+      Swal.fire({
+        title: 'Chưa chọn khách hàng',
+        text: 'Vui lòng chọn ít nhất một khách hàng để xóa.',
+        icon: 'warning',
+        confirmButtonColor: '#f44336',
+        backdrop: `rgba(0,0,0,0.7)`,
+        customClass: {
+          container: 'swal-overlay-container',
+          popup: 'swal-popup-priority',
+        },
+        target: document.body,
+        heightAuto: false,
+        onOpen: () => {
+          document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+        },
+      })
+      return
+    }
+
+    const dialogResult = await Swal.fire({
+      title: 'Xác nhận xóa nhiều',
+      text: `Bạn có chắc chắn muốn xóa ${selectedCustomers.length} khách hàng đã chọn không?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f44336',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Đồng ý, xóa!',
+      cancelButtonText: 'Hủy',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      backdrop: `rgba(0,0,0,0.7)`,
+      customClass: {
+        container: 'swal-overlay-container',
+        popup: 'swal-popup-priority',
+        title: 'swal-title',
+        content: 'swal-content',
+        confirmButton: 'swal-confirm',
+      },
+      target: document.body,
+      heightAuto: false,
+      onOpen: () => {
+        document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+      },
+    })
+
+    if (dialogResult.isConfirmed) {
+      try {
+        Swal.fire({
+          title: 'Đang xóa...',
           allowOutsideClick: false,
-          allowEscapeKey: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading()
+          },
           backdrop: `rgba(0,0,0,0.7)`,
           customClass: {
             container: 'swal-overlay-container',
-            popup: 'swal-popup-priority',
-            title: 'swal-title',
-            content: 'swal-content',
-            confirmButton: 'swal-confirm',
           },
           target: document.body,
           heightAuto: false,
@@ -794,18 +811,44 @@ export default {
           },
         })
 
-        if (dialogResult.isConfirmed) {
-          try {
+        const deletePromises = selectedCustomers.map((customer) =>
+          axios.delete(`${apiUrl.value}/api/Customer/${customer.maKH}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken.value}`,
+            },
+          })
+        )
+        const results = await Promise.allSettled(deletePromises)
+        const failed = results.filter((r) => r.status === 'rejected').length
+
+        customers.value = customers.value.filter((customer) => !customer.isSelected)
+        totalItems.value -= selectedCustomers.length - failed
+        totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
+
+        if (customers.value.length === 0 && currentPage.value > 1) {
+          currentPage.value -= 1
+          await fetchCustomers()
+        } else {
+          searchTable()
+        }
+
+        isDeleteMultipleMode.value = false
+        selectAll.value = false
+
+        Swal.close()
+        setTimeout(() => {
+          if (failed > 0) {
             Swal.fire({
-              title: 'Đang xóa...',
-              allowOutsideClick: false,
-              showConfirmButton: false,
-              willOpen: () => {
-                Swal.showLoading()
-              },
+              title: 'Cảnh báo',
+              text: `${failed} khách hàng không thể xóa. ${
+                selectedCustomers.length - failed
+              } khách hàng đã xóa thành công.`,
+              icon: 'warning',
+              confirmButtonColor: '#f44336',
               backdrop: `rgba(0,0,0,0.7)`,
               customClass: {
                 container: 'swal-overlay-container',
+                popup: 'swal-popup-priority',
               },
               target: document.body,
               heightAuto: false,
@@ -813,169 +856,85 @@ export default {
                 document.querySelector('.swal-overlay-container').style.zIndex = '999999'
               },
             })
-
-            const deletePromises = selectedCustomers.map((customer) =>
-              axios.delete(`${apiUrl.value}/api/Customer/${customer.maKH}`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken.value}`,
-                },
-              })
-            )
-            const results = await Promise.allSettled(deletePromises)
-            const failed = results.filter((r) => r.status === 'rejected').length
-
-            customers.value = customers.value.filter((customer) => !customer.isSelected)
-            totalItems.value -= selectedCustomers.length - failed
-            totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
-
-            if (customers.value.length === 0 && currentPage.value > 1) {
-              currentPage.value -= 1
-              await fetchCustomers()
-            } else {
-              searchTable()
-            }
-
-            isDeleteMultipleMode.value = false
-            selectAll.value = false
-
-            Swal.close()
-            setTimeout(() => {
-              if (failed > 0) {
-                Swal.fire({
-                  title: 'Cảnh báo',
-                  text: `${failed} khách hàng không thể xóa. ${
-                    selectedCustomers.length - failed
-                  } khách hàng đã xóa thành công.`,
-                  icon: 'warning',
-                  confirmButtonColor: '#f44336',
-                  backdrop: `rgba(0,0,0,0.7)`,
-                  customClass: {
-                    container: 'swal-overlay-container',
-                    popup: 'swal-popup-priority',
-                  },
-                  target: document.body,
-                  heightAuto: false,
-                  onOpen: () => {
-                    document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                  },
-                })
-              } else {
-                Swal.fire({
-                  title: 'Đã xóa!',
-                  text: `${selectedCustomers.length} khách hàng đã được xóa thành công.`,
-                  icon: 'success',
-                  confirmButtonColor: '#4CAF50',
-                  timer: 3000,
-                  backdrop: `rgba(0,0,0,0.7)`,
-                  customClass: {
-                    container: 'swal-overlay-container',
-                    popup: 'swal-popup-priority',
-                  },
-                  target: document.body,
-                  heightAuto: false,
-                  onOpen: () => {
-                    document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                  },
-                })
-              }
-            }, 300)
-
-            emit('refresh-data')
-          } catch (error) {
-            console.error('Lỗi khi xóa nhiều khách hàng:', error)
-            Swal.close()
-            setTimeout(() => {
-              Swal.fire({
-                title: 'Lỗi!',
-                text: 'Không thể xóa khách hàng. Vui lòng thử lại sau.',
-                icon: 'error',
-                confirmButtonColor: '#f44336',
-                timer: 3000,
-                backdrop: `rgba(0,0,0,0.7)`,
-                customClass: {
-                  container: 'swal-overlay-container',
-                  popup: 'swal-popup-priority',
-                },
-                target: document.body,
-                heightAuto: false,
-                onOpen: () => {
-                  document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                },
-              })
-            }, 300)
+          } else {
+            Swal.fire({
+              title: 'Đã xóa!',
+              text: `${selectedCustomers.length} khách hàng đã được xóa thành công.`,
+              icon: 'success',
+              confirmButtonColor: '#4CAF50',
+              timer: 3000,
+              backdrop: `rgba(0,0,0,0.7)`,
+              customClass: {
+                container: 'swal-overlay-container',
+                popup: 'swal-popup-priority',
+              },
+              target: document.body,
+              heightAuto: false,
+              onOpen: () => {
+                document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+              },
+            })
           }
-        }
+        }, 300)
+
+        emit('refresh-data')
+      } catch (error) {
+        console.error('Lỗi khi xóa nhiều khách hàng:', error)
+        Swal.close()
+        setTimeout(() => {
+          Swal.fire({
+            title: 'Lỗi!',
+            text: 'Không thể xóa khách hàng. Vui lòng thử lại sau.',
+            icon: 'error',
+            confirmButtonColor: '#f44336',
+            timer: 3000,
+            backdrop: `rgba(0,0,0,0.7)`,
+            customClass: {
+              container: 'swal-overlay-container',
+              popup: 'swal-popup-priority',
+            },
+            target: document.body,
+            heightAuto: false,
+            onOpen: () => {
+              document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+            },
+          })
+        }, 300)
       }
     }
-
-    const toggleSelectAll = () => {
-      customers.value.forEach((customer) => {
-        customer.isSelected = selectAll.value
-      })
-    }
-
-    const updateSelectAll = () => {
-      selectAll.value = customers.value.every((customer) => customer.isSelected)
-    }
-
-    const cancelDeleteMultiple = () => {
-      isDeleteMultipleMode.value = false
-      customers.value.forEach((customer) => {
-        customer.isSelected = false
-      })
-      selectAll.value = false
-    }
-
-    let searchTimeout = null
-    watch(searchQuery, () => {
-      if (searchTimeout) clearTimeout(searchTimeout)
-      searchTimeout = setTimeout(() => {
-        currentPage.value = 1
-        fetchCustomers()
-      }, 600)
-    })
-
-    onMounted(() => {
-      fetchCustomers()
-    })
-
-    return {
-      customers,
-      displayedCustomers,
-      searchQuery,
-      sortColumn,
-      sortAsc,
-      showExportOptions,
-      searchTable,
-      sortTable,
-      formatDate,
-      getStatusClass,
-      exportToServer,
-      editCustomer,
-      deleteCustomer,
-      fetchCustomers,
-      getImageUrl,
-      loading,
-      currentPage,
-      pageSize,
-      totalItems,
-      totalPages,
-      displayedPages,
-      changePage,
-      onPageSizeChange,
-      showDetailModal,
-      selectedCustomer,
-      showCustomerDetail,
-      closeDetailModal,
-      isDeleteMultipleMode,
-      selectAll,
-      toggleSelectAll,
-      updateSelectAll,
-      toggleDeleteMultiple,
-      cancelDeleteMultiple,
-    }
-  },
+  }
 }
+
+const toggleSelectAll = () => {
+  customers.value.forEach((customer) => {
+    customer.isSelected = selectAll.value
+  })
+}
+
+const updateSelectAll = () => {
+  selectAll.value = customers.value.every((customer) => customer.isSelected)
+}
+
+const cancelDeleteMultiple = () => {
+  isDeleteMultipleMode.value = false
+  customers.value.forEach((customer) => {
+    customer.isSelected = false
+  })
+  selectAll.value = false
+}
+
+let searchTimeout = null
+watch(searchQuery, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchCustomers()
+  }, 600)
+})
+
+onMounted(() => {
+  fetchCustomers()
+})
 </script>
 
 <style scoped>

@@ -86,10 +86,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'AboutUs'
-}
+<script setup>
 </script>
 
 <style scoped>

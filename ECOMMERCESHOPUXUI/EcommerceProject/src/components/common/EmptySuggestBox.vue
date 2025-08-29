@@ -16,28 +16,27 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'EmptySuggestBox',
-  props: {
-    iconSub: {
-      type: String,
-      default: 'fa fa-box-open',
-    },
-    contentText: {
-      type: String,
-      required: true,
-    },
-    linkNav: {
-      type: String,
-      default: '',
-    },
-    suggestContent: {
-      type: String,
-      default: 'Khám phá ngay',
-    },
+<script setup>
+import { defineProps } from 'vue';
+
+const props = defineProps({
+  iconSub: {
+    type: String,
+    default: 'fa fa-box-open',
   },
-}
+  contentText: {
+    type: String,
+    required: true,
+  },
+  linkNav: {
+    type: String,
+    default: '',
+  },
+  suggestContent: {
+    type: String,
+    default: 'Khám phá ngay',
+  },
+});
 </script>
 
 <style scoped>

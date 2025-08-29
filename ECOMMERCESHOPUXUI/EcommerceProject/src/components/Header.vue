@@ -1,79 +1,4 @@
 
-<script setup>
-import { useRouter, RouterLink } from 'vue-router'
-import Cookies from 'js-cookie'
-import NavigationUserReview from '@/components/ui/NavigationUserReview.vue'
-import WheelRandomCode from '@/components/specicals/WheelRandomCode.vue'
-import { ref, computed, onMounted, watch } from 'vue'
-import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/utils/auth'
-import Swal from 'sweetalert2'
-import { emitter } from '@/stores/eventBus'
-const router = useRouter()
-const accessToken = ref(Cookies.get('accessToken'))
-const refreshToken = ref(Cookies.get('refreshToken'))
-const isLoggedIn = ref(false)
-const numberCart = ref(0)
-const getUrlAPI = ref(GetApiUrl())
-const checkLogin = async () => {
-  const result = await validateToken(accessToken.value, refreshToken.value)
-  isLoggedIn.value = result.isValid
-  if (result.isValid) {
-    accessToken.value = result.newAccessToken
-  }
-}
-async function fetchCart() {
-  // accessToken.value = Cookies.get('accessToken')
-  // refreshToken.value = Cookies.get('refreshToken')
-  const validatetoken = await validateToken(accessToken.value, refreshToken.value)
-  if (validatetoken.isValid) {
-    accessToken.value = validatetoken.newAccessToken
-    const readToken = decodeToken(accessToken.value)
-    const response = await fetch(`${getUrlAPI.value}/api/Cart/${readToken.IdUser}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    if (!response.ok) {
-      throw new Error('Failed to fetchCart')
-    }
-    const result = await response.json()
-    numberCart.value = result.length
-  }
-}
-
-const handleLogout = () => {
-  Swal.fire({
-    title: 'Bạn có chắc chắn muốn đăng xuất?',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Đăng xuất',
-    cancelButtonText: 'Hủy',
-  }).then((result) => {
-    if (result.isConfirmed) {
-      Cookies.remove('accessToken')
-      Cookies.remove('refreshToken')
-      isLoggedIn.value = false
-      Swal.fire({
-        title: 'Đăng xuất thành công!',
-        icon: 'success',
-        confirmButtonColor: '#3085d6',
-        timer: 1500,
-      }).then(() => {
-        router.push('/Login')
-      })
-    }
-  })
-}
-onMounted(async () => {
-  checkLogin()
-  await fetchCart()
-  emitter.on('cart-updated', fetchCart)
-})
-</script>
 <template>
   <div>
     <!-- Offcanvas Menu Begin -->
@@ -274,7 +199,7 @@ onMounted(async () => {
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import Cookies from 'js-cookie'
@@ -282,93 +207,79 @@ import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/utils/auth'
 import Swal from 'sweetalert2'
 import { emitter } from '@/stores/eventBus'
+import NavigationUserReview from '@/components/ui/NavigationUserReview.vue'
+import WheelRandomCode from '@/components/specicals/WheelRandomCode.vue'
 
-export default {
-  components: {
-    NavigationUserReview,
-    WheelRandomCode,
-    RouterLink,
-  },
-  setup() {
-    const router = useRouter()
-    const accessToken = ref(Cookies.get('accessToken'))
-    const refreshToken = ref(Cookies.get('refreshToken'))
-    const isLoggedIn = ref(false)
-    const numberCart = ref(0)
-    const getUrlAPI = ref(GetApiUrl())
+const router = useRouter()
+const accessToken = ref(Cookies.get('accessToken'))
+const refreshToken = ref(Cookies.get('refreshToken'))
+const isLoggedIn = ref(false)
+const numberCart = ref(0)
+const getUrlAPI = ref(GetApiUrl())
 
-    const checkLogin = async () => {
-      if (accessToken.value && refreshToken.value) {
-        const result = await validateToken(accessToken.value, refreshToken.value)
-        isLoggedIn.value = result.isValid
-        if (result.isValid) {
-          accessToken.value = result.newAccessToken
-          Cookies.set('accessToken', accessToken.value)
-        } else {
-          Cookies.remove('accessToken')
-          Cookies.remove('refreshToken')
-        }
-      } else {
-        isLoggedIn.value = false
-      }
+const checkLogin = async () => {
+  if (accessToken.value && refreshToken.value) {
+    const result = await validateToken(accessToken.value, refreshToken.value)
+    isLoggedIn.value = result.isValid
+    if (result.isValid) {
+      accessToken.value = result.newAccessToken
+      Cookies.set('accessToken', accessToken.value)
+    } else {
+      Cookies.remove('accessToken')
+      Cookies.remove('refreshToken')
     }
+  } else {
+    isLoggedIn.value = false
+  }
+}
 
-    const fetchCart = async () => {
-      const validatetoken = await validateToken(accessToken.value, refreshToken.value)
-      if (validatetoken.isValid) {
-        accessToken.value = validatetoken.newAccessToken
-        const readToken = decodeToken(accessToken.value)
-        const response = await fetch(`${getUrlAPI.value}/api/Cart/${readToken.IdUser}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        if (!response.ok) throw new Error('Failed to fetchCart')
-        const result = await response.json()
-        numberCart.value = result.length
-      }
-    }
+const fetchCart = async () => {
+  const validatetoken = await validateToken(accessToken.value, refreshToken.value)
+  if (validatetoken.isValid) {
+    accessToken.value = validatetoken.newAccessToken
+    const readToken = decodeToken(accessToken.value)
+    const response = await fetch(`${getUrlAPI.value}/api/Cart/${readToken.IdUser}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!response.ok) throw new Error('Failed to fetchCart')
+    const result = await response.json()
+    numberCart.value = result.length
+  }
+}
 
-    const handleLogout = () => {
+const handleLogout = () => {
+  Swal.fire({
+    title: 'Bạn có chắc chắn muốn đăng xuất?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Đăng xuất',
+    cancelButtonText: 'Hủy',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Cookies.remove('accessToken')
+      Cookies.remove('refreshToken')
+      isLoggedIn.value = false
       Swal.fire({
-        title: 'Bạn có chắc chắn muốn đăng xuất?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Đăng xuất',
-        cancelButtonText: 'Hủy',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          Cookies.remove('accessToken')
-          Cookies.remove('refreshToken')
-          isLoggedIn.value = false
-          Swal.fire({
-            title: 'Đăng xuất thành công!',
-            icon: 'success',
-            confirmButtonColor: '#3085d6',
-            timer: 1500,
-          }).then(() => {
-            router.push('/Login')
-          })
-        }
+        title: 'Đăng xuất thành công!',
+        icon: 'success',
+        confirmButtonColor: '#3085d6',
+        timer: 1500,
+      }).then(() => {
+        router.push('/Login')
       })
     }
-
-    onMounted(() => {
-      checkLogin()
-      fetchCart()
-      emitter.on('cart-updated', fetchCart)
-    })
-
-    return {
-      isLoggedIn,
-      numberCart,
-      handleLogout,
-    }
-  },
+  })
 }
-</script>
 
+onMounted(() => {
+  checkLogin()
+  fetchCart()
+  emitter.on('cart-updated', fetchCart)
+})
+</script>
 
 <style>
 .header__menu {

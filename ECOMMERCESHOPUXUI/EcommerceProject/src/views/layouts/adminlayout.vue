@@ -376,20 +376,6 @@ onMounted(() => {
   </div>
 </template>
 
-<script>
-import Cookies from 'js-cookie'
-
-export default {
-  methods: {
-    logout() {
-      Cookies.remove('accessToken')
-      Cookies.remove('refreshToken')
-      this.$router.push('/login')
-    },
-  },
-}
-</script>
-
 <style>
 .xp-profilebar {
   display: flex;

@@ -20,7 +20,7 @@
       <div class="action-buttons">
         <button class="btn delete-multiple-button" @click="toggleDeleteMultiple">
           <i class="fas fa-trash-alt"></i>
-          {{
+          {{ 
             isDeleteMultipleMode
               ? `Xác nhận xóa (${staff.filter((s) => s.isSelected).length})`
               : 'Xóa nhiều'
@@ -122,7 +122,7 @@
             </td>
             <td>
               <img :src="getImageUrl(staffMember.hinh)" alt="" />
-              <span class="staff-name" @click="showStaffDetail(staffMember)">{{
+              <span class="staff-name" @click="showStaffDetail(staffMember)">{{ 
                 staffMember.hoTen
               }}</span>
             </td>
@@ -315,78 +315,101 @@
     </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
-import Swal from 'sweetalert2'
+<script setup>
+import { ref, computed, onMounted, watch, defineEmits } from 'vue'
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/utils/auth'
 import Cookies from 'js-cookie'
+import axios from 'axios'
+import Swal from 'sweetalert2'
 import pathReplaceImg from '@/utils/processPathImg'
-export default {
-  name: 'StaffTable',
-  emits: ['edit-staff', 'refresh-data'],
-  setup(props, { emit }) {
-    const accessToken = ref(Cookies.get('accessToken'))
-    const refreshToken = ref(Cookies.get('refreshToken'))
-    const readToken = ref({})
-    const router = useRouter()
-    const staff = ref([])
-    const searchQuery = ref('')
-    const sortColumn = ref('maNV')
-    const sortAsc = ref(true)
-    const showExportOptions = ref(false)
-    const apiUrl = ref(GetApiUrl())
-    const loading = ref(false)
-    const currentPage = ref(1)
-    const pageSize = ref(6)
-    const totalItems = ref(0)
-    const totalPages = ref(1)
-    const maxPagesToShow = ref(5)
-    const filterHoTen = ref('')
-    const filterGioiTinh = ref('')
-    const filterTinhTrang = ref('')
-    const showDetailModal = ref(false)
-    const selectedStaff = ref(null)
-    // Biến cho chế độ xóa nhiều
-    const isDeleteMultipleMode = ref(false)
-    const selectAll = ref(false)
 
-    const showStaffDetail = (staffMember) => {
-      selectedStaff.value = { ...staffMember }
-      showDetailModal.value = true
+const emit = defineEmits(['edit-staff', 'refresh-data'])
+
+const accessToken = ref(Cookies.get('accessToken'))
+const refreshToken = ref(Cookies.get('refreshToken'))
+const readToken = ref({})
+const router = useRouter()
+const staff = ref([])
+const searchQuery = ref('')
+const sortColumn = ref('maNV')
+const sortAsc = ref(true)
+const showExportOptions = ref(false)
+const apiUrl = ref(GetApiUrl())
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(6)
+const totalItems = ref(0)
+const totalPages = ref(1)
+const maxPagesToShow = ref(5)
+const filterHoTen = ref('')
+const filterGioiTinh = ref('')
+const filterTinhTrang = ref('')
+const showDetailModal = ref(false)
+const selectedStaff = ref(null)
+const isDeleteMultipleMode = ref(false)
+const selectAll = ref(false)
+
+const showStaffDetail = (staffMember) => {
+  selectedStaff.value = { ...staffMember }
+  showDetailModal.value = true
+}
+
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  selectedStaff.value = null
+}
+
+const fetchStaff = async () => {
+  try {
+    const validatetoken = await validateToken(accessToken.value, refreshToken.value)
+    if (validatetoken.isValid == false) {
+      router.push('/LoginStaff')
+      return
     }
+    accessToken.value = validatetoken.newAccessToken
+    loading.value = true
 
-    const closeDetailModal = () => {
-      showDetailModal.value = false
-      selectedStaff.value = null
-    }
+    Swal.fire({
+      title: 'Đang tải dữ liệu...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading()
+      },
+    })
 
-    const fetchStaff = async () => {
+    filterHoTen.value = searchQuery.value
+
+    const response = await axios.get(`${apiUrl.value}/api/Staff`, {
+      params: {
+        pageSize: pageSize.value,
+        pageNumber: currentPage.value,
+        hoTen: filterHoTen.value,
+        gioiTinh: filterGioiTinh.value,
+        tinhTrang: filterTinhTrang.value,
+        isActive: true,
+      },
+      headers: {
+        Authorization: `Bearer ${accessToken.value}`,
+      },
+    })
+
+    staff.value = response.data.map((staffMember) => ({
+      ...staffMember,
+      isHidden: false,
+      delay: '0s',
+      backgroundColor: 'transparent',
+      isSelected: false,
+    }))
+
+    const totalCount = response.headers['x-total-count']
+    if (totalCount) {
+      totalItems.value = parseInt(totalCount)
+    } else {
       try {
-        const validatetoken = await validateToken(accessToken.value, refreshToken.value)
-        if (validatetoken.isValid == false) {
-          router.push('/Login')
-          return
-        }
-        accessToken.value = validatetoken.newAccessToken
-        loading.value = true
-
-        Swal.fire({
-          title: 'Đang tải dữ liệu...',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading()
-          },
-        })
-
-        filterHoTen.value = searchQuery.value
-
-        const response = await axios.get(`${apiUrl.value}/api/Staff`, {
+        const countResponse = await axios.get(`${apiUrl.value}/api/Staff/count`, {
           params: {
-            pageSize: pageSize.value,
-            pageNumber: currentPage.value,
             hoTen: filterHoTen.value,
             gioiTinh: filterGioiTinh.value,
             tinhTrang: filterTinhTrang.value,
@@ -396,259 +419,254 @@ export default {
             Authorization: `Bearer ${accessToken.value}`,
           },
         })
-
-        staff.value = response.data.map((staffMember) => ({
-          ...staffMember,
-          isHidden: false,
-          delay: '0s',
-          backgroundColor: 'transparent',
-          isSelected: false,
-        }))
-
-        const totalCount = response.headers['x-total-count']
-        if (totalCount) {
-          totalItems.value = parseInt(totalCount)
-        } else {
-          try {
-            const countResponse = await axios.get(`${apiUrl.value}/api/Staff/count`, {
-              params: {
-                hoTen: filterHoTen.value,
-                gioiTinh: filterGioiTinh.value,
-                tinhTrang: filterTinhTrang.value,
-                isActive: true,
-              },
-              headers: {
-                Authorization: `Bearer ${accessToken.value}`,
-              },
-            })
-            totalItems.value = countResponse.data
-          } catch (error) {
-            console.error('Lỗi khi lấy tổng số nhân viên:', error)
-            const itemsReturned = staff.value.length
-            if (itemsReturned < pageSize.value) {
-              totalItems.value = (currentPage.value - 1) * pageSize.value + itemsReturned
-            }
-          }
-        }
-
-        totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
-
-        searchTable()
-
-        Swal.close()
+        totalItems.value = countResponse.data
       } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu nhân viên:', error)
-        Swal.fire({
-          title: 'Lỗi!',
-          text: 'Không thể tải dữ liệu nhân viên. Vui lòng thử lại sau.',
-          icon: 'error',
-          confirmButtonColor: '#f44336',
-        })
-      } finally {
-        loading.value = false
+        console.error('Lỗi khi lấy tổng số nhân viên:', error)
+        const itemsReturned = staff.value.length
+        if (itemsReturned < pageSize.value) {
+          totalItems.value = (currentPage.value - 1) * pageSize.value + itemsReturned
+        }
       }
     }
 
-    const getImageUrl = (relativePath) => {
-      if (!relativePath) return 'https://via.placeholder.com/36'
-      return pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', relativePath)
-    }
+    totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
 
-    const displayedStaff = computed(() => {
-      return staff.value
+    searchTable()
+
+    Swal.close()
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu nhân viên:', error)
+    Swal.fire({
+      title: 'Lỗi!',
+      text: 'Không thể tải dữ liệu nhân viên. Vui lòng thử lại sau.',
+      icon: 'error',
+      confirmButtonColor: '#f44336',
     })
+  } finally {
+    loading.value = false
+  }
+}
 
-    const displayedPages = computed(() => {
-      const maxPages = maxPagesToShow.value
-      const pages = []
+const getImageUrl = (relativePath) => {
+  if (!relativePath) return 'https://via.placeholder.com/36'
+  return pathReplaceImg(undefined, 'HinhAnh/AnhNhanVien', relativePath)
+}
 
-      if (totalPages.value <= maxPages) {
-        for (let i = 1; i <= totalPages.value; i++) {
-          pages.push(i)
-        }
-      } else {
-        const halfMax = Math.floor(maxPages / 2)
-        let startPage = Math.max(currentPage.value - halfMax, 1)
-        let endPage = Math.min(startPage + maxPages - 1, totalPages.value)
+const displayedStaff = computed(() => {
+  return staff.value
+})
 
-        if (endPage - startPage + 1 < maxPages) {
-          startPage = Math.max(endPage - maxPages + 1, 1)
-        }
+const displayedPages = computed(() => {
+  const maxPages = maxPagesToShow.value
+  const pages = []
 
-        for (let i = startPage; i <= endPage; i++) {
-          pages.push(i)
-        }
-      }
+  if (totalPages.value <= maxPages) {
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    const halfMax = Math.floor(maxPages / 2)
+    let startPage = Math.max(currentPage.value - halfMax, 1)
+    let endPage = Math.min(startPage + maxPages - 1, totalPages.value)
 
-      return pages
+    if (endPage - startPage + 1 < maxPages) {
+      startPage = Math.max(endPage - maxPages + 1, 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+  }
+
+  return pages
+})
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    currentPage.value = page
+    fetchStaff()
+  }
+}
+
+const onPageSizeChange = () => {
+  currentPage.value = 1
+  fetchStaff()
+}
+
+const searchTable = () => {
+  const query = searchQuery.value.toLowerCase()
+  staff.value.forEach((staffMember, i) => {
+    const staffData = [
+      staffMember.hoTen?.toLowerCase() || '',
+      staffMember.sdt?.toLowerCase() || '',
+      staffMember.email?.toLowerCase() || '',
+      staffMember.diaChi?.toLowerCase() || '',
+      staffMember.tenChucVu?.toLowerCase() || '',
+    ].join(' ')
+
+    staffMember.isHidden = !staffData.includes(query)
+    staffMember.delay = i / 25 + 's'
+  })
+
+  const visibleRows = staff.value.filter((staffMember) => !staffMember.isHidden)
+  visibleRows.forEach((staffMember, i) => {
+    staffMember.backgroundColor = i % 2 === 0 ? 'transparent' : '#0000000b'
+  })
+}
+
+const sortTable = (column) => {
+  if (sortColumn.value === column) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortColumn.value = column
+    sortAsc.value = true
+  }
+
+  sortStaff()
+}
+
+const sortStaff = () => {
+  staff.value.sort((a, b) => {
+    let aValue = a[sortColumn.value]
+    let bValue = b[sortColumn.value]
+
+    if (sortColumn.value === 'chucVu') {
+      aValue = a.tenChucVu
+      bValue = b.tenChucVu
+    }
+
+    if (sortColumn.value === 'ngaySinh' || sortColumn.value === 'ngayVaoLam') {
+      const dateA = new Date(aValue)
+      const dateB = new Date(bValue)
+      return sortAsc.value ? dateA - dateB : dateB - dateA
+    }
+
+    if (aValue < bValue) return sortAsc.value ? -1 : 1
+    if (aValue > bValue) return sortAsc.value ? 1 : -1
+    return 0
+  })
+
+  searchTable()
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('vi-VN')
+}
+
+const getStatusClass = (status) => {
+  if (!status) {
+    console.warn('Trạng thái rỗng hoặc không xác định:', status)
+    return 'unknown'
+  }
+
+  status = status.trim().toLowerCase()
+  if (status.includes('làm việc') || status.includes('hoạt động')) return 'delivered'
+  if (status.includes('tạm khóa') || status.includes('nghỉ việc') || status.includes('khóa'))
+    return 'cancelled'
+  if (status.includes('thử việc') || status.includes('chờ')) return 'pending'
+  console.warn('Trạng thái không khớp:', status)
+  return 'unknown'
+}
+
+const exportToServer = (fileType) => {
+  let url = ''
+  if (fileType === 'pdf') {
+    url = `${apiUrl.value}/api/Staff/export/pdf`
+  } else if (fileType === 'excel') {
+    url = `${apiUrl.value}/api/Staff/export/excel`
+  }
+
+  Swal.fire({
+    title: `Đang xuất file ${fileType.toUpperCase()}...`,
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading()
+    },
+  })
+
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute(
+    'download',
+    fileType === 'pdf' ? 'DanhSachNhanVien.pdf' : 'DanhSachNhanVien.xlsx'
+  )
+  document.body.appendChild(link)
+
+  link.onload = () => {
+    Swal.close()
+  }
+
+  link.onerror = () => {
+    Swal.fire({
+      title: 'Lỗi!',
+      text: `Không thể tải xuống file ${fileType.toUpperCase()}.`,
+      icon: 'error',
+      confirmButtonColor: '#f44336',
     })
+  }
 
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
-        currentPage.value = page
-        fetchStaff()
-      }
-    }
+  link.click()
+  document.body.removeChild(link)
+  showExportOptions.value = false
 
-    const onPageSizeChange = () => {
-      currentPage.value = 1
-      fetchStaff()
-    }
+  setTimeout(() => {
+    Swal.close()
+  }, 9000)
+}
 
-    const searchTable = () => {
-      const query = searchQuery.value.toLowerCase()
-      staff.value.forEach((staffMember, i) => {
-        const staffData = [
-          staffMember.hoTen?.toLowerCase() || '',
-          staffMember.sdt?.toLowerCase() || '',
-          staffMember.email?.toLowerCase() || '',
-          staffMember.diaChi?.toLowerCase() || '',
-          staffMember.tenChucVu?.toLowerCase() || '',
-        ].join(' ')
+const editStaff = (id) => {
+  emit('edit-staff', id)
+}
 
-        staffMember.isHidden = !staffData.includes(query)
-        staffMember.delay = i / 25 + 's'
-      })
+const deleteStaff = async (id) => {
+  Swal.close()
+  const validatetoken = await validateToken(accessToken.value, refreshToken.value)
+  if (validatetoken.isValid == false) {
+    router.push('/LoginStaff')
+    return
+  }
+  accessToken.value = validatetoken.newAccessToken
+  const dialogResult = await Swal.fire({
+    title: 'Xác nhận xóa',
+    text: 'Bạn có chắc chắn muốn xóa nhân viên này không?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#f44336',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Đồng ý, xóa!',
+    cancelButtonText: 'Hủy',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    backdrop: `rgba(0,0,0,0.7)`,
+    customClass: {
+      container: 'swal-overlay-container',
+      popup: 'swal-popup-priority',
+      title: 'swal-title',
+      content: 'swal-content',
+      confirmButton: 'swal-confirm',
+    },
+    target: document.body,
+    heightAuto: false,
+    onOpen: () => {
+      document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+    },
+  })
 
-      const visibleRows = staff.value.filter((staffMember) => !staffMember.isHidden)
-      visibleRows.forEach((staffMember, i) => {
-        staffMember.backgroundColor = i % 2 === 0 ? 'transparent' : '#0000000b'
-      })
-    }
-
-    const sortTable = (column) => {
-      if (sortColumn.value === column) {
-        sortAsc.value = !sortAsc.value
-      } else {
-        sortColumn.value = column
-        sortAsc.value = true
-      }
-
-      sortStaff()
-    }
-
-    const sortStaff = () => {
-      staff.value.sort((a, b) => {
-        let aValue = a[sortColumn.value]
-        let bValue = b[sortColumn.value]
-
-        if (sortColumn.value === 'chucVu') {
-          aValue = a.tenChucVu
-          bValue = b.tenChucVu
-        }
-
-        if (sortColumn.value === 'ngaySinh' || sortColumn.value === 'ngayVaoLam') {
-          const dateA = new Date(aValue)
-          const dateB = new Date(bValue)
-          return sortAsc.value ? dateA - dateB : dateB - dateA
-        }
-
-        if (aValue < bValue) return sortAsc.value ? -1 : 1
-        if (aValue > bValue) return sortAsc.value ? 1 : -1
-        return 0
-      })
-
-      searchTable()
-    }
-
-    const formatDate = (dateString) => {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return ''
-      return date.toLocaleDateString('vi-VN')
-    }
-
-    const getStatusClass = (status) => {
-      if (!status) {
-        console.warn('Trạng thái rỗng hoặc không xác định:', status)
-        return 'unknown'
-      }
-
-      status = status.trim().toLowerCase()
-      if (status.includes('làm việc') || status.includes('hoạt động')) return 'delivered'
-      if (status.includes('tạm khóa') || status.includes('nghỉ việc') || status.includes('khóa'))
-        return 'cancelled'
-      if (status.includes('thử việc') || status.includes('chờ')) return 'pending'
-      console.warn('Trạng thái không khớp:', status)
-      return 'unknown'
-    }
-
-    const exportToServer = (fileType) => {
-      let url = ''
-      if (fileType === 'pdf') {
-        url = `${apiUrl.value}/api/Staff/export/pdf`
-      } else if (fileType === 'excel') {
-        url = `${apiUrl.value}/api/Staff/export/excel`
-      }
-
+  if (dialogResult.isConfirmed) {
+    try {
       Swal.fire({
-        title: `Đang xuất file ${fileType.toUpperCase()}...`,
+        title: 'Đang xóa...',
         allowOutsideClick: false,
-        didOpen: () => {
+        showConfirmButton: false,
+        willOpen: () => {
           Swal.showLoading()
         },
-      })
-
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute(
-        'download',
-        fileType === 'pdf' ? 'DanhSachNhanVien.pdf' : 'DanhSachNhanVien.xlsx'
-      )
-      document.body.appendChild(link)
-
-      link.onload = () => {
-        Swal.close()
-      }
-
-      link.onerror = () => {
-        Swal.fire({
-          title: 'Lỗi!',
-          text: `Không thể tải xuống file ${fileType.toUpperCase()}.`,
-          icon: 'error',
-          confirmButtonColor: '#f44336',
-        })
-      }
-
-      link.click()
-      document.body.removeChild(link)
-      showExportOptions.value = false
-
-      setTimeout(() => {
-        Swal.close()
-      }, 9000)
-    }
-
-    const editStaff = (id) => {
-      emit('edit-staff', id)
-    }
-
-    const deleteStaff = async (id) => {
-      Swal.close()
-      const validatetoken = await validateToken(accessToken.value, refreshToken.value)
-      if (validatetoken.isValid == false) {
-        router.push('/Login')
-        return
-      }
-      accessToken.value = validatetoken.newAccessToken
-      const dialogResult = await Swal.fire({
-        title: 'Xác nhận xóa',
-        text: 'Bạn có chắc chắn muốn xóa nhân viên này không?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#f44336',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Đồng ý, xóa!',
-        cancelButtonText: 'Hủy',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
         backdrop: `rgba(0,0,0,0.7)`,
         customClass: {
           container: 'swal-overlay-container',
-          popup: 'swal-popup-priority',
-          title: 'swal-title',
-          content: 'swal-content',
-          confirmButton: 'swal-confirm',
         },
         target: document.body,
         heightAuto: false,
@@ -657,54 +675,202 @@ export default {
         },
       })
 
-      if (dialogResult.isConfirmed) {
-        try {
-          Swal.fire({
-            title: 'Đang xóa...',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            willOpen: () => {
-              Swal.showLoading()
-            },
-            backdrop: `rgba(0,0,0,0.7)`,
-            customClass: {
-              container: 'swal-overlay-container',
-            },
-            target: document.body,
-            heightAuto: false,
-            onOpen: () => {
-              document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-            },
-          })
+      await axios.delete(`${apiUrl.value}/api/Staff/${id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken.value}`,
+        },
+      })
 
-          await axios.delete(`${apiUrl.value}/api/Staff/${id}`, {
+      const index = staff.value.findIndex((staffMember) => staffMember.maNV === id)
+      if (index !== -1) {
+        staff.value[index].isHidden = true
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        staff.value.splice(index, 1)
+      }
+
+      totalItems.value -= 1
+      totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
+
+      if (staff.value.length === 0 && currentPage.value > 1) {
+        currentPage.value -= 1
+        await fetchStaff()
+      } else {
+        searchTable()
+      }
+
+      Swal.close()
+      setTimeout(() => {
+        Swal.fire({
+          title: 'Đã xóa!',
+          text: 'Nhân viên đã được xóa thành công.',
+          icon: 'success',
+          confirmButtonColor: '#4CAF50',
+          timer: 3000,
+          backdrop: `rgba(0,0,0,0.7)`,
+          customClass: {
+            container: 'swal-overlay-container',
+            popup: 'swal-popup-priority',
+          },
+          target: document.body,
+          heightAuto: false,
+          onOpen: () => {
+            document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+          },
+        })
+      }, 300)
+
+      emit('refresh-data')
+    } catch (error) {
+      console.error('Lỗi khi xóa nhân viên:', error)
+      Swal.close()
+      setTimeout(() => {
+        Swal.fire({
+          title: 'Lỗi!',
+          text: 'Không thể xóa nhân viên. Vui lòng thử lại sau.',
+          icon: 'error',
+          confirmButtonColor: '#f44336',
+          timer: 3000,
+          backdrop: `rgba(0,0,0,0.7)`,
+          customClass: {
+            container: 'swal-overlay-container',
+            popup: 'swal-popup-priority',
+          },
+          target: document.body,
+          heightAuto: false,
+          onOpen: () => {
+            document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+          },
+        })
+      }, 300)
+    }
+  }
+}
+
+const toggleDeleteMultiple = async () => {
+  if (!isDeleteMultipleMode.value) {
+    isDeleteMultipleMode.value = true
+    staff.value.forEach((staffMember) => {
+      staffMember.isSelected = false
+    })
+    selectAll.value = false
+    showExportOptions.value = false
+  } else {
+    const selectedStaff = staff.value.filter((staffMember) => staffMember.isSelected)
+    if (selectedStaff.length === 0) {
+      Swal.fire({
+        title: 'Chưa chọn nhân viên',
+        text: 'Vui lòng chọn ít nhất một nhân viên để xóa.',
+        icon: 'warning',
+        confirmButtonColor: '#f44336',
+        backdrop: `rgba(0,0,0,0.7)`,
+        customClass: {
+          container: 'swal-overlay-container',
+          popup: 'swal-popup-priority',
+        },
+        target: document.body,
+        heightAuto: false,
+        onOpen: () => {
+          document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+        },
+      })
+      return
+    }
+
+    const dialogResult = await Swal.fire({
+      title: 'Xác nhận xóa nhiều',
+      text: `Bạn có chắc chắn muốn xóa ${selectedStaff.length} nhân viên đã chọn không?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f44336',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Đồng ý, xóa!',
+      cancelButtonText: 'Hủy',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      backdrop: `rgba(0,0,0,0.7)`,
+      customClass: {
+        container: 'swal-overlay-container',
+        popup: 'swal-popup-priority',
+        title: 'swal-title',
+        content: 'swal-content',
+        confirmButton: 'swal-confirm',
+      },
+      target: document.body,
+      heightAuto: false,
+      onOpen: () => {
+        document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+      },
+    })
+
+    if (dialogResult.isConfirmed) {
+      try {
+        Swal.fire({
+          title: 'Đang xóa...',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading()
+          },
+          backdrop: `rgba(0,0,0,0.7)`,
+          customClass: {
+            container: 'swal-overlay-container',
+          },
+          target: document.body,
+          heightAuto: false,
+          onOpen: () => {
+            document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+          },
+        })
+
+        const deletePromises = selectedStaff.map((staffMember) =>
+          axios.delete(`${apiUrl.value}/api/Staff/${staffMember.maNV}`, {
             headers: {
               Authorization: `Bearer ${accessToken.value}`,
             },
           })
+        )
+        const results = await Promise.allSettled(deletePromises)
+        const failed = results.filter((r) => r.status === 'rejected').length
 
-          const index = staff.value.findIndex((staffMember) => staffMember.maNV === id)
-          if (index !== -1) {
-            staff.value[index].isHidden = true
-            await new Promise((resolve) => setTimeout(resolve, 500))
-            staff.value.splice(index, 1)
-          }
+        staff.value = staff.value.filter((staffMember) => !staffMember.isSelected)
+        totalItems.value -= selectedStaff.length - failed
+        totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
 
-          totalItems.value -= 1
-          totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
+        if (staff.value.length === 0 && currentPage.value > 1) {
+          currentPage.value -= 1
+          await fetchStaff()
+        } else {
+          searchTable()
+        }
 
-          if (staff.value.length === 0 && currentPage.value > 1) {
-            currentPage.value -= 1
-            await fetchStaff()
+        isDeleteMultipleMode.value = false
+        selectAll.value = false
+
+        Swal.close()
+        setTimeout(() => {
+          if (failed > 0) {
+            Swal.fire({
+              title: 'Cảnh báo',
+              text: `${failed} nhân viên không thể xóa. ${
+                selectedStaff.length - failed
+              } nhân viên đã xóa thành công.`,
+              icon: 'warning',
+              confirmButtonColor: '#f44336',
+              backdrop: `rgba(0,0,0,0.7)`,
+              customClass: {
+                container: 'swal-overlay-container',
+                popup: 'swal-popup-priority',
+              },
+              target: document.body,
+              heightAuto: false,
+              onOpen: () => {
+                document.querySelector('.swal-overlay-container').style.zIndex = '999999'
+              },
+            })
           } else {
-            searchTable()
-          }
-
-          Swal.close()
-          setTimeout(() => {
             Swal.fire({
               title: 'Đã xóa!',
-              text: 'Nhân viên đã được xóa thành công.',
+              text: `${selectedStaff.length} nhân viên đã được xóa thành công.`,
               icon: 'success',
               confirmButtonColor: '#4CAF50',
               timer: 3000,
@@ -719,51 +885,20 @@ export default {
                 document.querySelector('.swal-overlay-container').style.zIndex = '999999'
               },
             })
-          }, 300)
+          }
+        }, 300)
 
-          emit('refresh-data')
-        } catch (error) {
-          console.error('Lỗi khi xóa nhân viên:', error)
-          Swal.close()
-          setTimeout(() => {
-            Swal.fire({
-              title: 'Lỗi!',
-              text: 'Không thể xóa nhân viên. Vui lòng thử lại sau.',
-              icon: 'error',
-              confirmButtonColor: '#f44336',
-              timer: 3000,
-              backdrop: `rgba(0,0,0,0.7)`,
-              customClass: {
-                container: 'swal-overlay-container',
-                popup: 'swal-popup-priority',
-              },
-              target: document.body,
-              heightAuto: false,
-              onOpen: () => {
-                document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-              },
-            })
-          }, 300)
-        }
-      }
-    }
-
-    const toggleDeleteMultiple = async () => {
-      if (!isDeleteMultipleMode.value) {
-        isDeleteMultipleMode.value = true
-        staff.value.forEach((staffMember) => {
-          staffMember.isSelected = false
-        })
-        selectAll.value = false
-        showExportOptions.value = false
-      } else {
-        const selectedStaff = staff.value.filter((staffMember) => staffMember.isSelected)
-        if (selectedStaff.length === 0) {
+        emit('refresh-data')
+      } catch (error) {
+        console.error('Lỗi khi xóa nhiều nhân viên:', error)
+        Swal.close()
+        setTimeout(() => {
           Swal.fire({
-            title: 'Chưa chọn nhân viên',
-            text: 'Vui lòng chọn ít nhất một nhân viên để xóa.',
-            icon: 'warning',
+            title: 'Lỗi!',
+            text: 'Không thể xóa nhân viên. Vui lòng thử lại sau.',
+            icon: 'error',
             confirmButtonColor: '#f44336',
+            timer: 3000,
             backdrop: `rgba(0,0,0,0.7)`,
             customClass: {
               container: 'swal-overlay-container',
@@ -775,217 +910,42 @@ export default {
               document.querySelector('.swal-overlay-container').style.zIndex = '999999'
             },
           })
-          return
-        }
-
-        const dialogResult = await Swal.fire({
-          title: 'Xác nhận xóa nhiều',
-          text: `Bạn có chắc chắn muốn xóa ${selectedStaff.length} nhân viên đã chọn không?`,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#f44336',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: 'Đồng ý, xóa!',
-          cancelButtonText: 'Hủy',
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          backdrop: `rgba(0,0,0,0.7)`,
-          customClass: {
-            container: 'swal-overlay-container',
-            popup: 'swal-popup-priority',
-            title: 'swal-title',
-            content: 'swal-content',
-            confirmButton: 'swal-confirm',
-          },
-          target: document.body,
-          heightAuto: false,
-          onOpen: () => {
-            document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-          },
-        })
-
-        if (dialogResult.isConfirmed) {
-          try {
-            Swal.fire({
-              title: 'Đang xóa...',
-              allowOutsideClick: false,
-              showConfirmButton: false,
-              willOpen: () => {
-                Swal.showLoading()
-              },
-              backdrop: `rgba(0,0,0,0.7)`,
-              customClass: {
-                container: 'swal-overlay-container',
-              },
-              target: document.body,
-              heightAuto: false,
-              onOpen: () => {
-                document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-              },
-            })
-
-            const deletePromises = selectedStaff.map((staffMember) =>
-              axios.delete(`${apiUrl.value}/api/Staff/${staffMember.maNV}`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken.value}`,
-                },
-              })
-            )
-            const results = await Promise.allSettled(deletePromises)
-            const failed = results.filter((r) => r.status === 'rejected').length
-
-            staff.value = staff.value.filter((staffMember) => !staffMember.isSelected)
-            totalItems.value -= selectedStaff.length - failed
-            totalPages.value = Math.ceil(totalItems.value / pageSize.value) || 1
-
-            if (staff.value.length === 0 && currentPage.value > 1) {
-              currentPage.value -= 1
-              await fetchStaff()
-            } else {
-              searchTable()
-            }
-
-            isDeleteMultipleMode.value = false
-            selectAll.value = false
-
-            Swal.close()
-            setTimeout(() => {
-              if (failed > 0) {
-                Swal.fire({
-                  title: 'Cảnh báo',
-                  text: `${failed} nhân viên không thể xóa. ${
-                    selectedStaff.length - failed
-                  } nhân viên đã xóa thành công.`,
-                  icon: 'warning',
-                  confirmButtonColor: '#f44336',
-                  backdrop: `rgba(0,0,0,0.7)`,
-                  customClass: {
-                    container: 'swal-overlay-container',
-                    popup: 'swal-popup-priority',
-                  },
-                  target: document.body,
-                  heightAuto: false,
-                  onOpen: () => {
-                    document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                  },
-                })
-              } else {
-                Swal.fire({
-                  title: 'Đã xóa!',
-                  text: `${selectedStaff.length} nhân viên đã được xóa thành công.`,
-                  icon: 'success',
-                  confirmButtonColor: '#4CAF50',
-                  timer: 3000,
-                  backdrop: `rgba(0,0,0,0.7)`,
-                  customClass: {
-                    container: 'swal-overlay-container',
-                    popup: 'swal-popup-priority',
-                  },
-                  target: document.body,
-                  heightAuto: false,
-                  onOpen: () => {
-                    document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                  },
-                })
-              }
-            }, 300)
-
-            emit('refresh-data')
-          } catch (error) {
-            console.error('Lỗi khi xóa nhiều nhân viên:', error)
-            Swal.close()
-            setTimeout(() => {
-              Swal.fire({
-                title: 'Lỗi!',
-                text: 'Không thể xóa nhân viên. Vui lòng thử lại sau.',
-                icon: 'error',
-                confirmButtonColor: '#f44336',
-                timer: 3000,
-                backdrop: `rgba(0,0,0,0.7)`,
-                customClass: {
-                  container: 'swal-overlay-container',
-                  popup: 'swal-popup-priority',
-                },
-                target: document.body,
-                heightAuto: false,
-                onOpen: () => {
-                  document.querySelector('.swal-overlay-container').style.zIndex = '999999'
-                },
-              })
-            }, 300)
-          }
-        }
+        }, 300)
       }
     }
-
-    const toggleSelectAll = () => {
-      staff.value.forEach((staffMember) => {
-        staffMember.isSelected = selectAll.value
-      })
-    }
-
-    const updateSelectAll = () => {
-      selectAll.value = staff.value.every((staffMember) => staffMember.isSelected)
-    }
-
-    const cancelDeleteMultiple = () => {
-      isDeleteMultipleMode.value = false
-      staff.value.forEach((staffMember) => {
-        staffMember.isSelected = false
-      })
-      selectAll.value = false
-    }
-
-    let searchTimeout = null
-    watch(searchQuery, () => {
-      if (searchTimeout) clearTimeout(searchTimeout)
-      searchTimeout = setTimeout(() => {
-        currentPage.value = 1
-        fetchStaff()
-      }, 600) // Đồng bộ với CustomerTable.vue
-    })
-
-    onMounted(() => {
-      fetchStaff()
-    })
-
-    return {
-      staff,
-      displayedStaff,
-      searchQuery,
-      sortColumn,
-      sortAsc,
-      showExportOptions,
-      searchTable,
-      sortTable,
-      formatDate,
-      getStatusClass,
-      exportToServer,
-      editStaff,
-      deleteStaff,
-      fetchStaff,
-      getImageUrl,
-      loading,
-      currentPage,
-      pageSize,
-      totalItems,
-      totalPages,
-      displayedPages,
-      changePage,
-      onPageSizeChange,
-      showDetailModal,
-      selectedStaff,
-      showStaffDetail,
-      closeDetailModal,
-      isDeleteMultipleMode,
-      selectAll,
-      toggleSelectAll,
-      updateSelectAll,
-      toggleDeleteMultiple,
-      cancelDeleteMultiple,
-    }
-  },
+  }
 }
+
+const toggleSelectAll = () => {
+  staff.value.forEach((staffMember) => {
+    staffMember.isSelected = selectAll.value
+  })
+}
+
+const updateSelectAll = () => {
+  selectAll.value = staff.value.every((staffMember) => staffMember.isSelected)
+}
+
+const cancelDeleteMultiple = () => {
+  isDeleteMultipleMode.value = false
+  staff.value.forEach((staffMember) => {
+    staffMember.isSelected = false
+  })
+  selectAll.value = false
+}
+
+let searchTimeout = null
+watch(searchQuery, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchStaff()
+  }, 600) // Đồng bộ với CustomerTable.vue
+})
+
+onMounted(() => {
+  fetchStaff()
+})
 </script>
 
 <style scoped>

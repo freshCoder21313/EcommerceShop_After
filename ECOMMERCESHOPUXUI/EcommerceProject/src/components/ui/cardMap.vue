@@ -17,21 +17,20 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'CardMap',
-  props: {
-    title: {
-      type: String,
-      default: 'Bản đồ',
-    },
-    mapSrc: {
-      type: String,
-      default:
-        'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3892.0437716591928!2d108.07307871059164!3d12.710566120495768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3171f7b6e379b675%3A0x72662967145555c0!2zVHLGsOG7nW5nIENhbyDEkeG6s25nIEZQVCBQb2x5dGVjaG5pYw!5e0!3m2!1svi!2s!4v1748163761852!5m2!1svi!2s',
-    },
+<script setup>
+import { defineProps } from 'vue';
+
+const props = defineProps({
+  title: {
+    type: String,
+    default: 'Bản đồ',
   },
-}
+  mapSrc: {
+    type: String,
+    default:
+      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3892.0437716591928!2d108.07307871059164!3d12.710566120495768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3171f7b6e379b675%3A0x72662967145555c0!2zVHLGsOG7nW5nIENhbyDEkeG6s25nIEZQVCBQb2x5dGVjaG5pYw!5e0!3m2!1svi!2s!4v1748163761852!5m2!1svi!2s',
+  },
+});
 </script>
 
 <style scoped>

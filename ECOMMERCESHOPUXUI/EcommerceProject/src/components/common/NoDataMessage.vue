@@ -6,10 +6,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'NoDataMessage',
-};
+<script setup>
 </script>
 
 <style scoped>

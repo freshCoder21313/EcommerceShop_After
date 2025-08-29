@@ -67,109 +67,89 @@
   </div>
 </template>
 
-<script>
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import NoDataMessage from '@/components/common/NoDataMessage.vue'
+<script setup>
+import { ref, computed, watch, onMounted, defineProps } from 'vue';
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import NoDataMessage from '@/components/common/NoDataMessage.vue';
+import ProductTable from '@/components/pages/admin/statistics/datatables/ProductTable.vue';
+import CustomerTable from '@/components/pages/admin/statistics/datatables/CustomerTable.vue';
+import EmployeeTable from '@/components/pages/admin/statistics/datatables/EmployeeTable.vue';
+import ComboTable from '@/components/pages/admin/statistics/datatables/ComboTable.vue';
+import CategoryStatistic from '@/components/pages/admin/statistics/CategoryStatistic.vue';
+import ReviewAnalysis from '@/components/pages/admin/statistics/ReviewAnalysis.vue';
 
-import ProductTable from '@/components/pages/admin/statistics/datatables/ProductTable.vue'
-import CustomerTable from '@/components/pages/admin/statistics/datatables/CustomerTable.vue'
-import EmployeeTable from '@/components/pages/admin/statistics/datatables/EmployeeTable.vue'
-import ComboTable from '@/components/pages/admin/statistics/datatables/ComboTable.vue'
-import CategoryStatistic from '@/components/pages/admin/statistics/CategoryStatistic.vue'
-import ReviewAnalysis from '@/components/pages/admin/statistics/ReviewAnalysis.vue'
+const props = defineProps({
+  data: {
+    default: () => ({}),
+  },
+  isLoading: {
+    type: Boolean,
+    default: true,
+  },
+  couponLoading: {
+    type: Boolean,
+    default: true,
+  },
+  categoryData: {
+    default: () => ({}),
+  },
+  categoryLoading: {
+    type: Boolean,
+    default: true,
+  },
+  inventoryData: {
+    default: () => ({}),
+  },
+  reviewData: {
+    default: () => ({}),
+  },
+  reviewLoading: {
+    type: Boolean,
+    default: true,
+  },
+});
 
-export default {
-  name: 'DatatableStatistic',
-  components: {
-    ProductTable,
-    CustomerTable,
-    EmployeeTable,
-    ComboTable,
-    CategoryStatistic,
-    ReviewAnalysis,
-    LoadingSpinner,
-    NoDataMessage,
-  },
-  props: {
-    data: {
-      default: () => ({}),
-    },
-    isLoading: {
-      type: Boolean,
-      default: true,
-    },
-    couponLoading: {
-      type: Boolean,
-      default: true,
-    },
-    categoryData: {
-      default: () => ({}),
-    },
-    categoryLoading: {
-      type: Boolean,
-      default: true,
-    },
-    inventoryData: {
-      default: () => ({}),
-    },
-    reviewData: {
-      default: () => ({}),
-    },
-    reviewLoading: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  data() {
-    return {
-      selectedTable: 'products', // Giá trị mặc định là sản phẩm
-      selectedStats: 'categories', // Giá trị mặc định cho thống kê bổ sung
-    }
-  },
-  computed: {
-    hasCategoryData() {
-      return this.categoryData?.totalCategories > 0 &&
-        Array.isArray(this.categoryData.topCategories) &&
-        this.categoryData.topCategories.length > 0
-    },
-    hasReviewData() {
-      return typeof this.reviewData?.averageRating === 'number' &&
-        this.reviewData.averageRating > 0 &&
-        this.reviewData.reviewCountsByStar &&
-        Object.keys(this.reviewData.reviewCountsByStar).length > 0
-    },
-    tableTitle() {
-      switch (this.selectedTable) {
-        case 'customers':
-          return 'Khách hàng hàng đầu'
-        case 'employees':
-          return 'Nhân viên hàng đầu'
-        case 'combos':
-          return 'Combo hàng đầu'
-        default:
-          return 'Sản phẩm bán chạy nhất'
-      }
-    },
-  },
-  watch: {
-    isLoading() {},
-    data: {
-      handler() {},
-      deep: true,
-    },
-  },
-  mounted() {
-    // this.setDefaultSelectedStats()
-  },
-  methods: {
-    setDefaultSelectedStats() {
-      if (this.hasCategoryData) this.selectedStats = 'categories'
-      else if (this.hasReviewData) this.selectedStats = 'reviews'
-      else this.selectedStats = null
-    },
+const selectedTable = ref('products');
+const selectedStats = ref('categories');
+
+const hasCategoryData = computed(() => {
+  return props.categoryData?.totalCategories > 0 &&
+    Array.isArray(props.categoryData.topCategories) &&
+    props.categoryData.topCategories.length > 0;
+});
+
+const hasReviewData = computed(() => {
+  return typeof props.reviewData?.averageRating === 'number' &&
+    props.reviewData.averageRating > 0 &&
+    props.reviewData.reviewCountsByStar &&
+    Object.keys(props.reviewData.reviewCountsByStar).length > 0;
+});
+
+const tableTitle = computed(() => {
+  switch (selectedTable.value) {
+    case 'customers':
+      return 'Khách hàng hàng đầu';
+    case 'employees':
+      return 'Nhân viên hàng đầu';
+    case 'combos':
+      return 'Combo hàng đầu';
+    default:
+      return 'Sản phẩm bán chạy nhất';
   }
+});
 
-}
+const setDefaultSelectedStats = () => {
+  if (hasCategoryData.value) selectedStats.value = 'categories';
+  else if (hasReviewData.value) selectedStats.value = 'reviews';
+  else selectedStats.value = null;
+};
+
+watch(() => props.isLoading, () => {});
+watch(() => props.data, () => {}, { deep: true });
+
+onMounted(() => {
+  // setDefaultSelectedStats()
+});
 </script>
 
 <style scoped>

@@ -6,44 +6,34 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { computed } from 'vue';
 
-export default {
-  name: 'StarRating',
-  props: {
-    rating: {
-      type: Number,
-      required: true,
-      default: 0
-    },
-    maxStars: {
-      type: Number,
-      default: 5
-    },
-    readOnly: {
-      type: Boolean,
-      default: true
-    }
+const props = defineProps({
+  rating: {
+    type: Number,
+    required: true,
+    default: 0
   },
-  emits: ['update:rating'],
-  setup(props, { emit }) {
-    const fullStars = computed(() => Math.floor(props.rating));
-    const halfStar = computed(() => props.rating % 1 !== 0);
-    const emptyStars = computed(() => props.maxStars - Math.ceil(props.rating));
+  maxStars: {
+    type: Number,
+    default: 5
+  },
+  readOnly: {
+    type: Boolean,
+    default: true
+  }
+});
 
-    const handleClick = (star) => {
-      if (!props.readOnly) {
-        emit('update:rating', star);
-      }
-    };
+const emit = defineEmits(['update:rating']);
 
-    return {
-      fullStars,
-      halfStar,
-      emptyStars,
-      handleClick
-    };
+const fullStars = computed(() => Math.floor(props.rating));
+const halfStar = computed(() => props.rating % 1 !== 0);
+const emptyStars = computed(() => props.maxStars - Math.ceil(props.rating));
+
+const handleClick = (star) => {
+  if (!props.readOnly) {
+    emit('update:rating', star);
   }
 };
 </script>

@@ -40,59 +40,50 @@
   </div>
 </template>
 
-<script>
-import { RouterLink } from 'vue-router'
-import { useRoute } from 'vue-router'
+<script setup>
+import { ref, onMounted } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
 
-export default {
-  name: 'ErrorComponent',
-  components: { RouterLink },
-  data() {
-    return {
-      status: '',
-      statusMessage: '',
-      errorSubtitle: '',
-      errorMessage: '',
-      redirectLink: '/',
-    }
-  },
-  mounted() {
-    const route = useRoute()
-    this.status = route.params.status
+const status = ref('');
+const statusMessage = ref('');
+const errorSubtitle = ref('');
+const errorMessage = ref('');
+const redirectLink = ref('/');
 
-    this.setErrorDetails()
-  },
-  methods: {
-    setErrorDetails() {
-      switch (this.status) {
-        case '401':
-          this.statusMessage = this.status
-          this.errorSubtitle = 'Trang không tồn tại hoặc phiên đăng nhập của bạn đã hết!'
-          this.errorMessage = 'Vui lòng quay lại trang bạn có thể truy cập.'
-          this.redirectLink = '/'
-          break
-        case '404':
-          this.statusMessage = this.status
-          this.errorSubtitle = 'Đã xảy ra lỗi!'
-          this.errorMessage = 'Trang bạn đang tìm kiếm không tồn tại.'
-          this.redirectLink = '/'
-          break
-        case '500':
-          this.statusMessage = this.status
-          this.errorSubtitle = 'Oops! Đã có sự cố.'
-          this.errorMessage = 'Đã xảy ra lỗi trên máy chủ.'
-          this.redirectLink = '/login'
-          break
-        default:
-          this.statusMessage = this.status
-          this.errorSubtitle = 'Vui lòng thử lại sau.'
-          this.errorMessage = 'Chúng tôi không thể xử lý yêu cầu của bạn.'
-          this.redirectLink = '/'
-          break
-      }
-    },
-  },
-}
+const setErrorDetails = () => {
+  switch (status.value) {
+    case '401':
+      statusMessage.value = status.value;
+      errorSubtitle.value = 'Trang không tồn tại hoặc phiên đăng nhập của bạn đã hết!';
+      errorMessage.value = 'Vui lòng quay lại trang bạn có thể truy cập.';
+      redirectLink.value = '/';
+      break;
+    case '404':
+      statusMessage.value = status.value;
+      errorSubtitle.value = 'Đã xảy ra lỗi!';
+      errorMessage.value = 'Trang bạn đang tìm kiếm không tồn tại.';
+      redirectLink.value = '/';
+      break;
+    case '500':
+      statusMessage.value = status.value;
+      errorSubtitle.value = 'Oops! Đã có sự cố.';
+      errorMessage.value = 'Đã xảy ra lỗi trên máy chủ.';
+      redirectLink.value = '/login';
+      break;
+    default:
+      statusMessage.value = status.value;
+      errorSubtitle.value = 'Vui lòng thử lại sau.';
+      errorMessage.value = 'Chúng tôi không thể xử lý yêu cầu của bạn.';
+      redirectLink.value = '/';
+      break;
+  }
+};
+
+onMounted(() => {
+  const route = useRoute();
+  status.value = route.params.status;
+  setErrorDetails();
+});
 </script>
 
 <style scoped>
