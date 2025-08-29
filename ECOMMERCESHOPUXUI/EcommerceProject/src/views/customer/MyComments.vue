@@ -47,7 +47,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { GetApiUrl } from '@/constants/api';
-import { validateToken, decodeToken } from '@/utils/auth';
+import { validateToken, decodeToken } from '@/services/authService';
 import Cookies from 'js-cookie';
 
 const getUrlAPI = ref(GetApiUrl());

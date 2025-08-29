@@ -114,7 +114,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, defineEmits, defineProps } from 'vue'
 import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'

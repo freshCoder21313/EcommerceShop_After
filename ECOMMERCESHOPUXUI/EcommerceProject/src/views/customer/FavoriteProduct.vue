@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import Swal from 'sweetalert2';
-import { decodeToken, validateToken } from '@/utils/auth';
+import { decodeToken, validateToken } from '@/services/authService';
 import { GetApiUrl } from '@/constants/api'
 import pathReplaceImg from '@/utils/processPathImg'
 function ReadToken(token) {

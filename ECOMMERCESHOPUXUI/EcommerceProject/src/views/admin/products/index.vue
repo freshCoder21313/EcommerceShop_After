@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 import CreateProductModal from '../products/create.vue'
 import EditProductModel from '../products/edit.vue'
 import DetailProductModel from '../products/details.vue'

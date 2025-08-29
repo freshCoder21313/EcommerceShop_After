@@ -17,7 +17,7 @@ import '@/assets/Admin/js/main.js'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Cookies from 'js-cookie'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 const accessToken = ref(Cookies.get('accessToken'))
 const refreshToken = ref(Cookies.get('refreshToken'))
 const readToken = ref({})

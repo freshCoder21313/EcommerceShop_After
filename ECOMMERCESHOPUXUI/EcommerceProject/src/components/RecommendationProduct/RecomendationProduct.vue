@@ -2,7 +2,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import $ from 'jquery'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 import { GetApiUrl } from '@/constants/api'
 import Cookies from 'js-cookie'
 import { useRoute } from 'vue-router'

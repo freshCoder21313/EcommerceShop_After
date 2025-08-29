@@ -380,7 +380,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { GetApiUrl } from '@/constants/api'
 import Cookies from 'js-cookie'
 import Swal from 'sweetalert2'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 import { useRoute, useRouter } from 'vue-router'
 
 // Reactive variables

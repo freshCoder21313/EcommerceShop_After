@@ -6,7 +6,7 @@ import RecomendationProduct from '@/components/RecommendationProduct/Recomendati
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import Swal from 'sweetalert2'
 import { jwtDecode } from 'jwt-decode'

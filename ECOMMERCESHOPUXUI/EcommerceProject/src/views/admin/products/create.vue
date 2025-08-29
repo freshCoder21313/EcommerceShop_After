@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { onMounted, ref, watch } from 'vue'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import Swal from 'sweetalert2'
 const router = useRouter()

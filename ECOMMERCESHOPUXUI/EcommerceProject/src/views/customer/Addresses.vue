@@ -44,7 +44,7 @@
         </button> -->
       </div>
     </div>
-    <editAddressModal @edit="edit" v-if="isOpenEdit" :selectedAddress="selectedAddress" />
+    <EditAddressModal @edit="edit" v-if="isOpenEdit" :selectedAddress="selectedAddress" />
   </div>
 </template>
 
@@ -52,8 +52,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { GetApiUrl } from '@/constants/api'
 import createAddressModal from '@/components/address/createAddressModal.vue'
-import editAddressModal from '@/components/address/editAddressModal.vue'
-import { decodeToken, validateToken } from '@/utils/auth'
+import EditAddressModal from '@/components/address/EditAddressModal.vue'
+import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'

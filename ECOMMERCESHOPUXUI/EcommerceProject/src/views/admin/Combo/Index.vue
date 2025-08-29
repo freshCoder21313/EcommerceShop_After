@@ -8,7 +8,7 @@ import { GetApiUrl } from '../../../../src/constants/api.js'
 import pathReplaceImg from '@/utils/processPathImg'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router'
-import { decodeToken, validateToken } from '@/utils/auth'
+import { decodeToken, validateToken } from '@/services/authService'
 const router = useRouter()
 const listCombo = ref([])
 const filteredCombos = ref([]) // Danh sách combo đã lọc và sắp xếp
