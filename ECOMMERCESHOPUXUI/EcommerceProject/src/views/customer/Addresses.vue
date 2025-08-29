@@ -12,7 +12,7 @@
         Thêm địa chỉ mới
       </button>
       <!-- Modal -->
-      <createAddressModal />
+      <CreateAddressModal />
     </div>
 
     <div
@@ -51,7 +51,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { GetApiUrl } from '@/constants/api'
-import createAddressModal from '@/components/address/createAddressModal.vue'
+import CreateAddressModal from '@/components/address/CreateAddressModal.vue'
 import EditAddressModal from '@/components/address/EditAddressModal.vue'
 import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'

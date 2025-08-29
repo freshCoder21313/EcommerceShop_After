@@ -5,7 +5,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
-import RecomendationProduct from '@/components/RecommendationProduct/RecomendationProduct.vue'
+import RecommendationProduct from '@/components/RecommendationProduct/RecommendationProduct.vue'
 import Swal from 'sweetalert2'
 import ReviewProductCombo from '@/components/pages/customers/reviews/ReviewProductCombo.vue'
 import TryOnProduct from '@/components/specicals/TryOnProduct.vue' // Import TryOnProduct
@@ -423,7 +423,7 @@ const formatRating = (rating) => {
               </div>
             </div>
 
-            <RecomendationProduct />
+            <RecommendationProduct />
           </div>
         </div>
       </section>

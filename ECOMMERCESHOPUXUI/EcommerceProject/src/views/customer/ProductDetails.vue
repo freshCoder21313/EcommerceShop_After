@@ -2,7 +2,7 @@
 import CompareStorageHelper from '@/models/dtos/expansionModels/compareObject'
 import ReviewProductCombo from '@/components/pages/customers/reviews/ReviewProductCombo.vue'
 import $ from 'jquery'
-import RecomendationProduct from '@/components/RecommendationProduct/RecomendationProduct.vue'
+import RecommendationProduct from '@/components/RecommendationProduct/RecommendationProduct.vue'
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
@@ -1003,7 +1003,7 @@ watch(
                 </div>
               </div>
             </div>
-            <RecomendationProduct />
+            <RecommendationProduct />
 
             <!-- Recommendation Section with Smart Spacing -->
           </div>

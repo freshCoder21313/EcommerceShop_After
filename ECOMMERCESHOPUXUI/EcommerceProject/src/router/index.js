@@ -1,7 +1,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
-import LayoutCustomer from '../views/layouts/customerlayout.vue'
-import LayoutAdmin from '../views/layouts/adminlayout.vue'
+import LayoutCustomer from '../views/layouts/CustomerLayout.vue'
+import LayoutAdmin from '../views/layouts/AdminLayout.vue'
 import home from '../views/customer/Home.vue'
 import shop from '../views/customer/Shop.vue'
 import FavoriteProduct from '../views/customer/FavoriteProduct.vue'
