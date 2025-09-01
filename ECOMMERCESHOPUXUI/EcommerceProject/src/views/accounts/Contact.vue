@@ -184,7 +184,7 @@ const handleTokenRefresh = async () => {
     } else {
       throw new Error(response.data.message || 'Không thể làm mới token');
     }
-  } catch (err) {
+  } catch (err) { // eslint-disable-line no-unused-vars
     await Swal.fire({
       icon: 'error',
       title: 'Phiên hết hạn',
@@ -241,7 +241,7 @@ const handleSubmit = async () => {
     } else {
       throw new Error(response.data.message || 'Gửi liên hệ thất bại');
     }
-  } catch (err) {
+  } catch (err) { // eslint-disable-line no-unused-vars
     if (err.response?.status === 401) {
       const refreshSuccess = await handleTokenRefresh();
       if (refreshSuccess) {
@@ -269,17 +269,7 @@ const handleSubmit = async () => {
   }
 };
 
-const handleLogout = async () => {
-  Cookies.remove('accessToken');
-  Cookies.remove('refreshToken');
-  await Swal.fire({
-    icon: 'info',
-    title: 'Đã đăng xuất',
-    text: 'Bạn đã đăng xuất thành công.',
-    confirmButtonText: 'OK',
-  });
-  router.push('/login');
-};
+
 
 // Validation
 const validateForm = () => {

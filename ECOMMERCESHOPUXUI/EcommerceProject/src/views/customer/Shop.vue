@@ -55,7 +55,7 @@ const fetchAPIProducts = async () => {
     products.value = result.data
     toTalPages.value = result.toTalPages
     console.log(result)
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi fetchAPIProducts:', error)
   } finally {
     isSearching.value = false

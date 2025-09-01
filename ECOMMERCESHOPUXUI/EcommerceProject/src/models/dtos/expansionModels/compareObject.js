@@ -9,7 +9,8 @@ class CompareStorageHelper {
     try {
       const data = localStorage.getItem(COMPARE_KEY)
       return data ? JSON.parse(data) : []
-    } catch (e) {
+    } catch (error) {
+      console.error('Error getting compare list from localStorage:', error);
       return []
     }
   }

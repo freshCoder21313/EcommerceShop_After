@@ -171,7 +171,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/services/authService'
+import { validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import pathReplaceImg from '@/utils/processPathImg'
 
@@ -194,7 +194,7 @@ const chucvus = ref([]);
 const accessToken = ref(Cookies.get('accessToken'))
 const refreshToken = ref(Cookies.get('refreshToken'))
 const router = useRouter()
-const readToken = ref({})
+
 
 // Initialize form data
 const formData = ref({

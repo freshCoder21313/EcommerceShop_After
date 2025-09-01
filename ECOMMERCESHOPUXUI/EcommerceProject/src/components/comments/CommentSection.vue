@@ -216,6 +216,7 @@ const addComment = async () => {
       Swal.fire('Lỗi', response.message || 'Không thể gửi bình luận.', 'error');
     }
   } catch (error) {
+    console.error('Error adding comment:', error);
     Swal.fire('Lỗi', error.message || 'Đã xảy ra lỗi khi gửi bình luận.', 'error');
   } finally {
     isSubmitting.value = false;
@@ -245,6 +246,7 @@ const submitReply = async (parentId) => {
       Swal.fire('Lỗi', response.message || 'Không thể gửi câu trả lời.', 'error');
     }
   } catch (error) {
+    console.error('Error submitting reply:', error);
     Swal.fire('Lỗi', 'Đã xảy ra lỗi khi gửi câu trả lời.', 'error');
   } finally {
     isSubmittingReply.value = false;

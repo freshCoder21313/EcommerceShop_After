@@ -89,18 +89,7 @@ let customerChart = null;
 let productChart = null;
 let orderChart = null;
 
-const summaryList = computed(() => {
-  return [
-    { label: 'Tổng doanh thu', value: formatCurrency(props.data?.totalRevenue) },
-    { label: 'Doanh thu TB ngày', value: formatCurrency(props.data?.averageDailyRevenue) },
-    {
-      label: 'Doanh thu TB tháng',
-      value: formatCurrency(props.data?.averageMonthlyRevenue),
-    },
-    { label: 'Doanh thu cao nhất', value: formatCurrency(props.data?.highestRevenue) },
-    { label: 'Doanh thu thấp nhất', value: formatCurrency(props.data?.lowestRevenue) },
-  ];
-});
+
 
 const renderCharts = () => {
   if (summaryRevenueChart) summaryRevenueChart.destroy();

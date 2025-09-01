@@ -36,7 +36,7 @@ const authService = {
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error) { // eslint-disable-line no-unused-vars
       console.error('Error decoding token:', error);
       return true; // Treat decoding errors as an expired session
     }
@@ -54,7 +54,7 @@ const authService = {
       const decoded = jwtDecode(token);
       const currentTime = Date.now() / 1000;
       return decoded.exp >= currentTime;
-    } catch (error) {
+    } catch (error) { // eslint-disable-line no-unused-vars
       return false; // Invalid token
     }
   },
@@ -150,7 +150,7 @@ export async function validateToken() {
     try {
       const newAccessToken = await refreshToken();
       return { isValid: true, newAccessToken };
-    } catch (error) {
+    } catch (error) { // eslint-disable-line no-unused-vars
       return { isValid: false };
     }
   }

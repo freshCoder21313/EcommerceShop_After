@@ -58,7 +58,7 @@ const checkFavoriteProduct = async (maSp) => {
     })
     const data = await response.json()
     favoriteStatus.value[maSp] = data.isFavorited || false
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi khi kiểm tra sản phẩm yêu thích:', error)
     favoriteStatus.value[maSp] = false
   }
@@ -130,7 +130,7 @@ const toggleFavoriteProduct = async (maSp) => {
         throw new Error(data.message || 'Failed to add to favorites')
       }
     }
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Error toggling favorite:', error)
     Swal.fire({
       title: 'Sản phẩm đã có trong danh sách yêu thích',
@@ -158,7 +158,7 @@ const fetchAPINewProduts = async () => {
     })
     if (!response.ok) throw new Error('Failed to fetch new products')
     ListNewProducts.value = await response.json()
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Error fetching new products:', error)
   }
 }
@@ -173,7 +173,7 @@ const fetchAPIBestSellerProduts = async () => {
     })
     if (!response.ok) throw new Error('Failed to fetch best seller products')
     ListBestSellerProducts.value = await response.json()
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Error fetching best seller products:', error)
   }
 }
@@ -188,7 +188,7 @@ const fetchAPIFavoriteProduts = async () => {
     })
     if (!response.ok) throw new Error('Failed to fetch favorite products')
     ListBestHotProducts.value = await response.json()
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Error fetching favorite products:', error)
   }
 }

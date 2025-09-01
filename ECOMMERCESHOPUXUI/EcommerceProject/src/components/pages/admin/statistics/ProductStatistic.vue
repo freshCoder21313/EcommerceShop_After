@@ -70,7 +70,7 @@ const props = defineProps({
   },
 });
 
-const productChart = ref(null);
+
 const salesQuantityChart = ref(null);
 const selectedTimePeriod = ref('date');
 const hasSalesChartData = ref(true);

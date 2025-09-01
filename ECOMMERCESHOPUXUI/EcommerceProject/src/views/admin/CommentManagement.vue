@@ -181,7 +181,7 @@ export default {
         } else {
           Swal.fire('Lỗi', 'Không thể tải danh sách bình luận.', 'error')
         }
-      } catch (error) {
+      } catch (error) { // eslint-disable-line no-unused-vars
         console.error('Failed to fetch comments:', error)
         Swal.fire('Lỗi', 'Có lỗi xảy ra khi kết nối tới máy chủ.', 'error')
       } finally {
@@ -284,7 +284,7 @@ export default {
         } else {
           Swal.fire('Lỗi', response.message || 'Không thể phê duyệt bình luận.', 'error')
         }
-      } catch (error) {
+      } catch (error) { // eslint-disable-line no-unused-vars
         console.error('Failed to approve comment:', error)
         Swal.fire('Lỗi', 'Thao tác thất bại.', 'error')
       }
@@ -314,7 +314,7 @@ export default {
         } else {
           Swal.fire('Lỗi', response.message || 'Không thể từ chối bình luận.', 'error')
         }
-      } catch (error) {
+      } catch (error) { // eslint-disable-line no-unused-vars
         console.error('Failed to reject comment:', error)
         Swal.fire('Lỗi', 'Thao tác thất bại.', 'error')
       }

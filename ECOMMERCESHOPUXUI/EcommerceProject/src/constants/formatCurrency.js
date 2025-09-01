@@ -19,31 +19,6 @@ export function formatCurrency(value, unit = 'VNĐ') {
 
 // Phương thức chuyển đổi số thành chữ
 export function convertNumberToWords(number) {
-  const units = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
-  const teens = [
-    'mười',
-    'mười một',
-    'mười hai',
-    'mười ba',
-    'mười bốn',
-    'mười lăm',
-    'mười sáu',
-    'mười bảy',
-    'mười tám',
-    'mười chín',
-  ]
-  const tens = [
-    '',
-    '',
-    'hai mươi',
-    'ba mươi',
-    'bốn mươi',
-    'năm mươi',
-    'sáu mươi',
-    'bảy mươi',
-    'tám mươi',
-    'chín mươi',
-  ]
   const magnitudes = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ']
 
   if (number === 0) {

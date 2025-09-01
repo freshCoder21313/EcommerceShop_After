@@ -131,7 +131,7 @@ const handleLogin = async () => {
       });
       return;
     }
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
      await Swal.fire({
         icon: 'error',
         title: 'Đăng nhập thất bại!',

@@ -11,7 +11,7 @@ import $ from 'jquery'
 import 'datatables.net'
 import 'datatables.net-dt/css/dataTables.dataTables.css'
 import { formatCurrency } from '@/constants/formatCurrency'
-import pathReplaceImg from '@/utils/processPathImg'
+import pathReplaceImg from '@/utils/processPathImg' // eslint-disable-line no-unused-vars
 import NoDataMessage from '@/components/common/NoDataMessage.vue'
 import StarRating from '@/components/common/StarRating.vue';
 import { createApp } from 'vue';
@@ -20,7 +20,7 @@ export default {
   name: 'ProductTable',
   components: {
     NoDataMessage,
-    StarRating
+    StarRating // eslint-disable-line vue/no-unused-components
   },
   props: {
     products: {
@@ -56,7 +56,7 @@ export default {
             data: 'averageRating',
             title: 'Đánh giá TB',
             className: 'text-center',
-            render: (data, type, row) => {
+            render: (data, type, /* row */) => { // eslint-disable-line no-unused-vars
               if (type === 'display') {
                 const container = document.createElement('div');
                 const app = createApp(StarRating, {
@@ -76,7 +76,7 @@ export default {
             data: 'revenue',
             title: 'Doanh thu',
             className: 'text-right',
-            render: (data, type, row) => {
+            render: (data, type, /* row */) => { // eslint-disable-line no-unused-vars
               if (type === 'display') {
                 return formatCurrency(data)
               }

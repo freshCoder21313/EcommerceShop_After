@@ -51,7 +51,7 @@ export default {
             data: 'revenue',
             title: 'Doanh thu',
             className: 'text-right',
-            render: function (data, type, row) {
+            render: function (data, type, /* row */) { // eslint-disable-line no-unused-vars
               if (type === 'display') {
                 return formatCurrency(data)
               }
@@ -61,7 +61,7 @@ export default {
           {
             data: 'location',
             title: 'Địa điểm',
-            render: function (data, type, row) {
+            render: function (data, type, /* row */) { // eslint-disable-line no-unused-vars
               if (type === 'sort') {
                 const match = data.match(/^(\d+)/)
                 return match ? parseInt(match[1], 10) : 0

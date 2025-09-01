@@ -124,7 +124,7 @@ const verifyRecaptcha = async () => {
     const data = await response.json();
     console.log('reCAPTCHA verification result:', data);
     return data;
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi khi xác minh reCAPTCHA:', error);
     return { success: false, message: 'Có lỗi xảy ra khi xác minh reCAPTCHA!' };
   }
@@ -170,7 +170,7 @@ const checkUsername = async () => {
     } else {
       usernameValid.value = true;
     }
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi khi kiểm tra tên tài khoản:', error);
     await Swal.fire({
       icon: 'error',
@@ -222,7 +222,7 @@ const checkEmail = async () => {
     } else {
       emailValid.value = true;
     }
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi khi kiểm tra email:', error);
     await Swal.fire({
       icon: 'error',
@@ -292,7 +292,7 @@ const sendVerificationCode = async () => {
         confirmButtonText: 'OK',
       });
     }
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi khi gửi mã xác minh:', error);
     await Swal.fire({
       icon: 'error',
@@ -463,7 +463,7 @@ const handleRegister = async () => {
         confirmButtonText: 'OK',
       });
     }
-  } catch (error) {
+  } catch (error) { // eslint-disable-line no-unused-vars
     console.error('Lỗi trong handleRegister:', {
       message: error.message,
       name: error.name,

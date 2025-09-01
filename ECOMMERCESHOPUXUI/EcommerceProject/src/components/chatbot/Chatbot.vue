@@ -66,7 +66,8 @@ const sendMessage = async () => {
   try {
     const res = await axios.get(`${getUrlAPI.value}/api/Chatbot?request=${encodeURIComponent(input)}`)
     messages.value.push({ sender: 'bot', text: res.data })
-  } catch (e) {
+  } catch (error) {
+    console.error('Error sending message:', error)
     messages.value.push({ sender: 'bot', text: '❌ Lỗi khi kết nối chatbot.' })
   } finally {
     isLoading.value = false

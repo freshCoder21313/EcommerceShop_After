@@ -1,7 +1,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import $ from 'jquery'
+
 import { decodeToken, validateToken } from '@/services/authService'
 import { GetApiUrl } from '@/constants/api'
 import Cookies from 'js-cookie'
@@ -13,7 +13,7 @@ const id = route.params.id
 const accessToken = ref(Cookies.get('accessToken'))
 const refreshToken = ref(Cookies.get('refreshToken'))
 const getUrlAPI = ref(GetApiUrl())
-const isFavorited = ref(false)
+
 const isLoading = ref(false)
 // Add to favorites function for recommendation products
 // const addToFavorites = async (productId) => {

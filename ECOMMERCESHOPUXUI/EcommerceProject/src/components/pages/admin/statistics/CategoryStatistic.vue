@@ -33,7 +33,7 @@ import Overlay from '@/components/common/Overlay.vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import NoDataMessage from '@/components/common/NoDataMessage.vue';
 import { Chart, registerables } from 'chart.js';
-import { formatCurrency } from '@/constants/formatCurrency';
+
 
 Chart.register(...registerables);
 

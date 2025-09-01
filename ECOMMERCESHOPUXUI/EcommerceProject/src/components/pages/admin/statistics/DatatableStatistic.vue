@@ -138,11 +138,7 @@ const tableTitle = computed(() => {
   }
 });
 
-const setDefaultSelectedStats = () => {
-  if (hasCategoryData.value) selectedStats.value = 'categories';
-  else if (hasReviewData.value) selectedStats.value = 'reviews';
-  else selectedStats.value = null;
-};
+
 
 watch(() => props.isLoading, () => {});
 watch(() => props.data, () => {}, { deep: true });

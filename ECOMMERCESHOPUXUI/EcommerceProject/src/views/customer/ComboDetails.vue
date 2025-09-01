@@ -267,7 +267,7 @@ const tryOnProductData = computed(() => {
   return {
     id: combo.value.id,
     name: combo.value.name,
-    image: pathReplaceImg(undefined, 'HinhAnh/AnhCombo', combo.tenHinhAnh), // Main combo image
+    image: pathReplaceImg(undefined, 'HinhAnh/AnhCombo', combo.value.tenHinhAnh), // Main combo image
     type: 'combo',
     category: 'combo', // Generic category for the combo itself
     description: combo.value.description,

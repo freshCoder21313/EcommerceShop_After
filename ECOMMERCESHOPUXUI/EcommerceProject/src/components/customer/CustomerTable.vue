@@ -305,7 +305,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/services/authService'
+import { validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import axios from 'axios'
 import Swal from 'sweetalert2'
@@ -315,7 +315,7 @@ const emit = defineEmits(['edit-customer', 'refresh-data'])
 
 const accessToken = ref(Cookies.get('accessToken'))
 const refreshToken = ref(Cookies.get('refreshToken'))
-const readToken = ref({})
+
 const router = useRouter()
 const customers = ref([])
 const searchQuery = ref('')
@@ -484,10 +484,7 @@ const changePage = (page) => {
   }
 }
 
-const onPageSizeChange = () => {
-  currentPage.value = 1
-  fetchCustomers()
-}
+
 
 const searchTable = () => {
   const query = searchQuery.value.toLowerCase()

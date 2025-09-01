@@ -18,7 +18,7 @@ import { createApp } from 'vue';
 
 export default {
   name: 'ComboTable',
-  components: { NoDataMessage, StarRating },
+  components: { NoDataMessage },
   props: {
     combos: {
       type: Array,
@@ -51,7 +51,7 @@ export default {
             data: 'starCount',
             title: 'Đánh giá',
             className: 'text-center',
-            render: (data, type, row) => {
+            render: (data, type, /* row */) => { // eslint-disable-line no-unused-vars
               if (type === 'display') {
                 const container = document.createElement('div');
                 const app = createApp(StarRating, {
@@ -71,7 +71,7 @@ export default {
             data: 'revenue',
             title: 'Doanh thu',
             className: 'text-right',
-            render: function (data, type, row) {
+            render: function (data, type, /* row */) { // eslint-disable-line no-unused-vars
               if (type === 'display') {
                 return formatCurrency(data)
               }

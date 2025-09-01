@@ -19,7 +19,7 @@
 <script setup>
 
 
-const props = defineProps({
+defineProps({
   iconSub: {
     type: String,
     default: 'fa fa-box-open',

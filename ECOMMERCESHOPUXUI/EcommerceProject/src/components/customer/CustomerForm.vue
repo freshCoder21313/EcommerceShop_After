@@ -139,7 +139,7 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
-import { decodeToken, validateToken } from '@/services/authService'
+import { validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'
 import pathReplaceImg from '@/utils/processPathImg'
 
@@ -173,7 +173,7 @@ export default {
 
     const accessToken = ref(Cookies.get('accessToken'))
     const refreshToken = ref(Cookies.get('refreshToken'))
-    const readToken = ref({})
+    
     const router = useRouter()
     const apiUrl = ref(GetApiUrl())
     const errors = reactive({})
@@ -181,15 +181,7 @@ export default {
     const imagePreview = ref('')
     const fileSelected = ref(null)
 
-    const showSuccessMessage = (message) => {
-      Swal.fire({
-        title: 'Thành công!',
-        text: message,
-        icon: 'success',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#4CAF50',
-      })
-    }
+    
 
     const showErrorMessage = (message) => {
       Swal.fire({
@@ -575,6 +567,7 @@ export default {
 
           Swal.close()
         } catch (error) {
+          console.error('Error fetching customer data:', error);
           Swal.close()
           showErrorMessage('Không thể tải thông tin khách hàng. Vui lòng thử lại sau!')
         }

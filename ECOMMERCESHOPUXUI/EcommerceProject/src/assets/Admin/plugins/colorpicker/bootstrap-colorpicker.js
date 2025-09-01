@@ -4910,7 +4910,7 @@ Color.prototype = {
 	green: getset('rgb', 1, maxfn(255)),
 	blue: getset('rgb', 2, maxfn(255)),
 
-	hue: getset(['hsl', 'hsv', 'hsl', 'hwb', 'hcg'], 0, function (val) { return ((val % 360) + 360) % 360; }), // eslint-disable-line brace-style
+	hue: getset(['hsl', 'hsv', 'hsl', 'hwb', 'hcg'], 0, function (val) { return ((val % 360) + 360) % 360; }),  
 
 	saturationl: getset('hsl', 1, maxfn(100)),
 	lightness: getset('hsl', 2, maxfn(100)),
