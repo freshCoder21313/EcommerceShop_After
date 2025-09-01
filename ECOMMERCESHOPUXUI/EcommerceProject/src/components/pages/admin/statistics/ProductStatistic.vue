@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, defineProps } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import { formatCurrency } from '@/constants/formatCurrency';
 import Overlay from '@/components/common/Overlay.vue';

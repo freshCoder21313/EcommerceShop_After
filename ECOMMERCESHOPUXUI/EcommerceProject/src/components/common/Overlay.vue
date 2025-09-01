@@ -20,7 +20,7 @@ Cách dùng 2: Overlay che phủ toàn trang
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
   isVisible: {

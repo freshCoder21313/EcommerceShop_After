@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, defineEmits, defineProps } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/services/authService'
 import Cookies from 'js-cookie'

@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, nextTick, defineProps } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import Overlay from '@/components/common/Overlay.vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import NoDataMessage from '@/components/common/NoDataMessage.vue';

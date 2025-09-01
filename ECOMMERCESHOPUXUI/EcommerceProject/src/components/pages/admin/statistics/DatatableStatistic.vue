@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, defineProps } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import NoDataMessage from '@/components/common/NoDataMessage.vue';
 import ProductTable from '@/components/pages/admin/statistics/datatables/ProductTable.vue';

@@ -166,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, defineProps, defineEmits } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router'

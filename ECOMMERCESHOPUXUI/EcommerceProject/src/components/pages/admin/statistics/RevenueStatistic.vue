@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, defineProps } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { formatCurrency } from '@/constants/formatCurrency';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import NoDataMessage from '@/components/common/NoDataMessage.vue';

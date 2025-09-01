@@ -98,7 +98,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, nextTick, defineProps } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
 import NoDataMessage from '@/components/common/NoDataMessage.vue';
