@@ -321,7 +321,7 @@ const isStatusActive = (step) => {
           <div class="row justify-content-end mt-4" style="font-size: 1.2rem">
             <div class="col-md-4">
               <table class="table table-bordered">
-                <tr>
+                <tbody><tr>
                   <td class="fw-medium">Tạm tính:</td>
                   <td class="text-end">{{ formatCurrency(order.tienGoc) }}</td>
                 </tr>
@@ -339,7 +339,7 @@ const isStatusActive = (step) => {
                     {{ formatCurrency(order.tienGoc + order.phiVanChuyen - order.giamGiaCoupon) }}
                   </td>
                 </tr>
-              </table>
+              </tbody></table>
             </div>
           </div>
         </div>

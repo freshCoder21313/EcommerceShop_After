@@ -11,12 +11,12 @@ import category3 from '@/assets/Customer/img/categories/category-3.jpg'
 import category4 from '@/assets/Customer/img/categories/category-4.jpg'
 import category5 from '@/assets/Customer/img/categories/category-5.jpg'
 import banner1 from '@/assets/Customer/img/banner/banner-1.jpg'
-import insta1 from '@/assets/Customer/img/instagram/insta-1.jpg'
-import insta2 from '@/assets/Customer/img/instagram/insta-2.jpg'
-import insta3 from '@/assets/Customer/img/instagram/insta-3.jpg'
-import insta4 from '@/assets/Customer/img/instagram/insta-4.jpg'
-import insta5 from '@/assets/Customer/img/instagram/insta-5.jpg'
-import insta6 from '@/assets/Customer/img/instagram/insta-6.jpg'
+// import insta1 from '@/assets/Customer/img/instagram/insta-1.jpg'
+// import insta2 from '@/assets/Customer/img/instagram/insta-2.jpg'
+// import insta3 from '@/assets/Customer/img/instagram/insta-3.jpg'
+// import insta4 from '@/assets/Customer/img/instagram/insta-4.jpg'
+// import insta5 from '@/assets/Customer/img/instagram/insta-5.jpg'
+// import insta6 from '@/assets/Customer/img/instagram/insta-6.jpg'
 import { GetApiUrl } from '@/constants/api'
 import pathReplaceImg from '@/utils/processPathImg'
 
@@ -41,33 +41,7 @@ function ReadToken(token) {
   return null
 }
 
-const setBackgroundImages = () => {
-  const elements = document.querySelectorAll('[data-setbg]')
-  elements.forEach((element) => {
-    const bgImage = element.getAttribute('data-setbg')
-    if (bgImage) {
-      const imagePath = bgImage.replace('../../assets/img/', '')
-      let imageUrl = ''
-      switch (imagePath) {
-        case 'categories/category-1.jpg': imageUrl = category1; break
-        case 'categories/category-2.jpg': imageUrl = category2; break
-        case 'categories/category-3.jpg': imageUrl = category3; break
-        case 'categories/category-4.jpg': imageUrl = category4; break
-        case 'categories/category-5.jpg': imageUrl = category5; break
-        case 'banner/banner-1.jpg': imageUrl = banner1; break
-        case 'instagram/insta-1.jpg': imageUrl = insta1; break
-        case 'instagram/insta-2.jpg': imageUrl = insta2; break
-        case 'instagram/insta-3.jpg': imageUrl = insta3; break
-        case 'instagram/insta-4.jpg': imageUrl = insta4; break
-        case 'instagram/insta-5.jpg': imageUrl = insta5; break
-        case 'instagram/insta-6.jpg': imageUrl = insta6; break
-      }
-      if (imageUrl) {
-        element.style.backgroundImage = `url(${imageUrl})`
-      }
-    }
-  })
-}
+
 
 const checkFavoriteProduct = async (maSp) => {
   if (!idKhachHang) return
@@ -102,9 +76,9 @@ const toggleFavoriteProduct = async (maSp) => {
     router.push('/Login')
     return
   }
+  const originalState = favoriteStatus.value[maSp] || false
 
   try {
-    const originalState = favoriteStatus.value[maSp] || false
     if (favoriteStatus.value[maSp]) {
       // Remove from favorites
       const response = await fetch(`${getUrlAPI.value}/api/Favorite/DeleteFavoriteProducts`, {
@@ -292,7 +266,6 @@ const startCountdown = () => {
 }
 
 onMounted(() => {
-  setBackgroundImages()
   startCountdown()
   startAutoSlide()
   Promise.all([
@@ -316,8 +289,8 @@ onMounted(() => {
       <div class="container-fluid">
         <div class="row">
           <div class="col-lg-6 p-0">
-            <div class="categories__item categories__large__item set-bg animated-category"
-              data-setbg="../../assets/img/categories/category-1.jpg">
+            <div class="categories__item categories__large__item set-bg animated-category p-3"
+              :style="{ backgroundImage: `url(${category1})` }">
               <div class="categories__text">
                 <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 36px">
                   Thời trang nữ
@@ -335,8 +308,8 @@ onMounted(() => {
           <div class="col-lg-6">
             <div class="row">
               <div class="col-lg-6 col-md-6 col-sm-6 p-0">
-                <div class="categories__item set-bg animated-category"
-                  data-setbg="../../assets/img/categories/category-2.jpg">
+                <div class="categories__item set-bg animated-category p-3"
+                  :style="{ backgroundImage: `url(${category2})` }">
                   <div class="categories__text">
                     <h4 style="font-size: 25px; font-family: Arial, Helvetica, sans-serif">
                       Thời trang nam
@@ -351,8 +324,8 @@ onMounted(() => {
                 </div>
               </div>
               <div class="col-lg-6 col-md-6 col-sm-6 p-0">
-                <div class="categories__item set-bg animated-category"
-                  data-setbg="../../assets/img/categories/category-3.jpg">
+                <div class="categories__item set-bg animated-category p-3"
+                  :style="{ backgroundImage: `url(${category3})` }">
                   <div class="categories__text">
                     <h4 style="font-size: 25px; font-family: Arial, Helvetica, sans-serif">
                       Thời trang trẻ em
@@ -363,9 +336,9 @@ onMounted(() => {
                 </div>
               </div>
               <div class="col-lg-6 col-md-6 col-sm-6 p-0" style="height: 327px">
-                <div class="categories__item set-bg animated-category"
-                  data-setbg="../../assets/img/categories/category-4.jpg">
-                  <div class="categories__text" style="margin-top: 100px">
+                <div class="categories__item set-bg animated-category p-3"
+                  :style="{ backgroundImage: `url(${category4})` }">
+                  <div class="categories__text">
                     <h4 style="font-size: 25px; font-family: Arial, Helvetica, sans-serif">
                       Giày dép
                     </h4>
@@ -375,9 +348,9 @@ onMounted(() => {
                 </div>
               </div>
               <div class="col-lg-6 col-md-6 col-sm-6 p-0">
-                <div class="categories__item set-bg animated-category"
-                  data-setbg="../../assets/img/categories/category-5.jpg">
-                  <div class="categories__text" style="margin-top: 100px">
+                <div class="categories__item set-bg animated-category p-3"
+                  :style="{ backgroundImage: `url(${category5})` }">
+                  <div class="categories__text">
                     <h4 style="font-size: 25px; font-family: Arial, Helvetica, sans-serif">
                       Phụ kiện
                     </h4>
@@ -395,7 +368,7 @@ onMounted(() => {
 
     <!-- Product Section Begin -->
     <section class="product spad">
-      <div class="" style="margin-left: 100px; margin-right: 100px">
+      <div class="mt-2" style="margin-left: 100px; margin-right: 100px">
         <!-- Flash Sale Header -->
         <div class="row align-items-center mb-4">
           <div class="col-md-6">
@@ -519,7 +492,7 @@ onMounted(() => {
 
     <!-- Banner Section Begin -->
     <section class="set-bg" style="position: relative; margin-bottom: 50px">
-      <img src="../../assets/Customer/img/banner/banner-1.jpg" class="animated-banner"
+      <img :src="banner1" class="animated-banner"
         style="width: 100%; height: 370px" />
       <div class="banner-icon"><i class="fas fa-tags fa-3x"></i></div>
       <div class="container" style="
