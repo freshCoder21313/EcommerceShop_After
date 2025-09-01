@@ -27,10 +27,10 @@ export default function initTemplate() {
     /*------------------
         Background Set
     --------------------*/
-    $('.set-bg').each(function () {
-        var bg = $(this).data('setbg');
-        $(this).css('background-image', 'url(' + bg + ')');
-    });
+    // $('.set-bg').each(function () {
+    //     var bg = $(this).data('setbg');
+    //     $(this).css('background-image', 'url(' + bg + ')');
+    // });
 
     //Search Switch
     $('.search-switch').on('click', function () {
