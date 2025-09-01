@@ -9,6 +9,9 @@ using APIClothesEcommerceShop.Services.CloudinaryService; // Added for Cloudinar
 using Microsoft.AspNetCore.Hosting; // Added for IWebHostEnvironment
 using Microsoft.AspNetCore.Http; // Added for FormFile
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace APIClothesEcommerceShop.Repositories.DbInitializer
 {
@@ -17,11 +20,14 @@ namespace APIClothesEcommerceShop.Repositories.DbInitializer
         private readonly EcommerceShopContext _db;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public DbInitializer(EcommerceShopContext db, ICloudinaryService cloudinaryService, IWebHostEnvironment webHostEnvironment)
+        private readonly IConfiguration _configuration;
+
+        public DbInitializer(EcommerceShopContext db, ICloudinaryService cloudinaryService, IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
         {
             _db = db;
             _cloudinaryService = cloudinaryService;
             _webHostEnvironment = webHostEnvironment;
+            _configuration = configuration;
         }
 
         public void InitializeDb()
@@ -32,10 +38,250 @@ namespace APIClothesEcommerceShop.Repositories.DbInitializer
             // TestCloudinaryMigrationAsync().Wait(); // Call the new test method
 #endif
             MigrateImagesToCloudinary().Wait(); // Call the new migration method
+
+            if (_configuration.GetValue<bool>("MongoDbSettings:EnableMigration"))
+            {
+                MigrateToMongoDbAsync().Wait();
+            }
             // InitTestOrder(3);
             // CreateOrderForTest("customer.demo@email.com", 14000000);
             // UpdateStreakForTest("customer.demo@email.com", 7);
         }
+
+        private async Task MigrateToMongoDbAsync()
+        {
+            Console.WriteLine("Starting data migration to MongoDB with NoSQL-first approach...");
+
+            var connectionString = _configuration["MongoDbSettings:ConnectionString"];
+            var databaseName = _configuration["MongoDbSettings:DatabaseName"];
+
+            if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(databaseName))
+            {
+                Console.WriteLine("MongoDB settings not found in appsettings.json. Aborting migration.");
+                return;
+            }
+
+            var client = new MongoClient(connectionString);
+            var database = client.GetDatabase(databaseName);
+
+            // --- Products ---
+            Console.WriteLine("Migrating Products...");
+            var productsToMigrate = (await _db.Sanphams
+                .Include(s => s.Chitietsanphams)
+                    .ThenInclude(ctsp => ctsp.Hinhanhs)
+                .Include(s => s.DanhGias)
+                .Include(s => s.Chitietdanhmucs)
+                    .ThenInclude(ctdm => ctdm.MaDanhMucConNavigation)
+                .ToListAsync())
+                .Select(s => new
+                {
+                    s.MaSp,
+                    TenSp = s.TenSanPham,
+                    s.MoTa,
+                    s.IsActive,
+                    Details = s.Chitietsanphams.Select(ctsp => new
+                    {
+                        ctsp.MaCtsp,
+                        Size = ctsp.KichThuoc,
+                        Mau = ctsp.MauSac,
+                        SoLuong = ctsp.SoLuongTon,
+                        ctsp.DonGia,
+                        Images = ctsp.Hinhanhs.Select(h => h.TenHinhAnh).ToList()
+                    }).ToList(),
+                    Reviews = s.DanhGias.Select(dg => new
+                    {
+                        Id = dg.Id,
+                        dg.MaKh,
+                        dg.NoiDung,
+                        dg.SoSao,
+                        dg.NgayDanhGia,
+                        dg.TenCacHinhAnh
+                    }).ToList(),
+                    Categories = s.Chitietdanhmucs.Select(ctdm => new
+                    {
+                        Id = ctdm.MaDanhMucCon,
+                        Name = ctdm.MaDanhMucConNavigation?.TenDanhMucCon
+                    }).ToList()
+                }).ToList();
+            await MigrateCollectionAsync(database, "Products", productsToMigrate);
+
+            // --- Categories ---
+            Console.WriteLine("Migrating Categories...");
+            var categoriesToMigrate = (await _db.Danhmucchas
+                .Include(dmc => dmc.Chitietdanhmucs)
+                    .ThenInclude(ctdm => ctdm.MaDanhMucConNavigation)
+                .ToListAsync())
+                .Select(dmc => new
+                {
+                    MaDanhMucCha = dmc.MaDanhMucCha,
+                    TenDanhMucCha = dmc.TenDanhMucCha,
+                    SubCategories = dmc.Chitietdanhmucs.Select(ctdm => new
+                    {
+                        Id = ctdm.MaDanhMucCon,
+                        Name = ctdm.MaDanhMucConNavigation.TenDanhMucCon
+                    }).Distinct().ToList()
+                }).ToList();
+            await MigrateCollectionAsync(database, "Categories", categoriesToMigrate);
+
+            // --- Customers ---
+            Console.WriteLine("Migrating Customers...");
+            var customersToMigrate = (await _db.Khachhangs
+                .Include(kh => kh.Diachis)
+                .Include(kh => kh.Sanphamyeuthichs)
+                .Include(kh => kh.LichSuXems)
+                .Include(kh => kh.Giohangs)
+                    .ThenInclude(gh => gh.MaCtspNavigation)
+                        .ThenInclude(ctsp => ctsp.MaSpNavigation)
+                .ToListAsync())
+                .Select(kh => new
+                {
+                    kh.MaKh,
+                    kh.HoTen,
+                    kh.TenTaiKhoan,
+                    kh.Email,
+                    kh.NgayTao,
+                    kh.IsActive,
+                    kh.TinhTrang,
+                    kh.Sdt,
+                    kh.Cccd,
+                    kh.NgaySinh,
+                    kh.GioiTinh,
+                    kh.HinhDaiDien,
+                    Addresses = kh.Diachis.Select(dc => new
+                    {
+                        DiaChiChiTiet = dc.diachichitiet,
+                        dc.XaPhuong,
+                        dc.QuanHuyen,
+                        dc.Tinh,
+                        MacDinh = dc.MacDinh
+                    }).ToList(),
+                    FavoriteProducts = kh.Sanphamyeuthichs.Select(spyt => spyt.MaSp).ToList(),
+                    ViewHistory = kh.LichSuXems.Select(lsx => lsx.MaSp).ToList(),
+                    ShoppingCart = kh.Giohangs.Select(gh => new
+                    {
+                        gh.MaCtsp,
+                        gh.SoLuong,
+                        Product = gh.MaCtspNavigation != null ? new
+                        {
+                            TenSp = gh.MaCtspNavigation.MaSpNavigation?.TenSanPham,
+                            Size = gh.MaCtspNavigation.KichThuoc,
+                            Mau = gh.MaCtspNavigation.MauSac,
+                            gh.MaCtspNavigation.DonGia
+                        } : null
+                    }).ToList()
+                }).ToList();
+            await MigrateCollectionAsync(database, "Customers", customersToMigrate);
+
+            // --- Orders ---
+            Console.WriteLine("Migrating Orders...");
+            var ordersToMigrate = (await _db.Hoadons
+                .Include(hd => hd.Cthoadons)
+                    .ThenInclude(cthd => cthd.MaCtspNavigation)
+                        .ThenInclude(ctsp => ctsp.MaSpNavigation)
+                .Include(hd => hd.Chitietcombohoadons)
+                    .ThenInclude(ctcbd => ctcbd.MaComboNavigation)
+                .ToListAsync())
+                .Select(hd => new
+                {
+                    hd.MaHd,
+                    hd.MaKh,
+                    hd.NgayTao,
+                    hd.DiaChiNhanHang,
+                    hd.HoTen,
+                    hd.Sdt,
+                    hd.PhiVanChuyen,
+                    hd.TienGoc,
+                    hd.HinhThucTt,
+                    hd.TinhTrang,
+                    hd.IsActive,
+                    Details = hd.Cthoadons.Select(cthd => new
+                    {
+                        cthd.MaCtsp,
+                        cthd.SoLuong,
+                        cthd.Gia,
+                        Product = cthd.MaCtspNavigation != null ? new
+                        {
+                            TenSp = cthd.MaCtspNavigation.MaSpNavigation?.TenSanPham,
+                            Size = cthd.MaCtspNavigation.KichThuoc,
+                            Mau = cthd.MaCtspNavigation.MauSac
+                        } : null
+                    }).ToList(),
+                    ComboDetails = hd.Chitietcombohoadons.Select(ctcbd => new
+                    {
+                        ctcbd.MaCombo,
+                        ctcbd.SoLuong,
+                        ctcbd.DonGia,
+                        Combo = ctcbd.MaComboNavigation != null ? new { ctcbd.MaComboNavigation.TenCombo } : null
+                    }).ToList()
+                }).ToList();
+            await MigrateCollectionAsync(database, "Orders", ordersToMigrate);
+
+            // --- Other collections that can remain separate ---
+            Console.WriteLine("Migrating Staffs, Roles, Coupons, Combos...");
+            await MigrateCollectionAsync(database, "Staffs", (await _db.Nhanviens.ToListAsync()).Select(s => new { s.MaNv, s.HoTen, s.Email, s.TenTaiKhoan, s.IsActive }).ToList());
+            await MigrateCollectionAsync(database, "Roles", (await _db.Chucvus.ToListAsync()).Select(r => new { r.MaChucVu, r.TenChucVu, r.IsActive }).ToList());
+            await MigrateCollectionAsync(database, "Coupons", (await _db.Macoupons.ToListAsync()).Select(c => new { c.MaCode, c.MoTa, c.PhanTramGiam, c.SoTienGiam, c.DonHangToiThieu, c.SoLuong, c.NgayBatDau, c.NgayKetThuc, c.TrangThai }).ToList());
+
+            // Combos (with circular reference fix)
+            var combosToMigrate = (await _db.Combos
+                .Include(c => c.Chitietcombos)
+                    .ThenInclude(ct => ct.MaSpNavigation)
+                .ToListAsync())
+                .Select(c => new
+                {
+                    c.MaCombo,
+                    c.TenCombo,
+                    c.Hinh,
+                    c.SoLuong,
+                    c.MoTa,
+                    c.IsActive,
+                    Chitietcombos = c.Chitietcombos.Select(ct => new
+                    {
+                        ct.MaSp,
+                        ct.SoLuongSP,
+                        TenSp = ct.MaSpNavigation.TenSanPham
+                    }).ToList()
+                }).ToList();
+            await MigrateCollectionAsync(database, "Combos", combosToMigrate);
+
+            Console.WriteLine("Data migration to MongoDB completed with a NoSQL-first schema.");
+        }
+
+        private async Task MigrateCollectionAsync<T>(IMongoDatabase database, string collectionName, List<T> data) where T : class
+        {
+            try
+            {
+                // Check if collection already has data
+                var collectionExists = await database.ListCollectionNames().ToListAsync().ContinueWith(t => t.Result.Contains(collectionName));
+                if (collectionExists)
+                {
+                    var collectionForCount = database.GetCollection<BsonDocument>(collectionName);
+                    if (await collectionForCount.CountDocumentsAsync(new BsonDocument()) > 0)
+                    {
+                        Console.WriteLine($"Collection '{collectionName}' already contains data. Skipping migration for this collection.");
+                        return;
+                    }
+                }
+
+
+                if (data == null || !data.Any())
+                {
+                    Console.WriteLine($"No data found for '{collectionName}'. Skipping.");
+                    return;
+                }
+
+                var collection = database.GetCollection<BsonDocument>(collectionName);
+                var bsonDocuments = data.Select(item => item.ToBsonDocument()).ToList();
+                await collection.InsertManyAsync(bsonDocuments);
+                Console.WriteLine($"Successfully migrated {bsonDocuments.Count} documents to '{collectionName}' collection.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred during migration of '{collectionName}': {ex.Message}");
+                // Optional: Log the full exception
+            }
+        }
+
         private void InitCombo(int numCreate, int? idOrder = null)
         {
             var sanphams = _db.Sanphams.ToList();
