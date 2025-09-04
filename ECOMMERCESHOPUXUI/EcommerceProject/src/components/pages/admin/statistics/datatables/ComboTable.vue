@@ -15,6 +15,7 @@ import pathReplaceImg from '@/utils/processPathImg'
 import NoDataMessage from '@/components/common/NoDataMessage.vue'
 import StarRating from '@/components/common/StarRating.vue';
 import { createApp } from 'vue';
+import DetailCard from '@/components/common/DetailCard.vue';
 
 export default {
   name: 'ComboTable',
@@ -87,44 +88,49 @@ export default {
       configsDt.attachSearchDebounce('#comboDatatable', table)
     },
     formatDetails(rowData) {
-      const div = $('<div/>').addClass('loading').text('Loading...')
-      const combo = this.combos.find((x) => x.comboId == rowData.comboId)
+      const combo = this.combos.find((x) => x.comboId == rowData.comboId);
+      const container = document.createElement('div');
+      container.className = 'container-fluid p-3';
 
-      const orderDetailsHtml = `
-        <div class="container-fluid p-3">
-          <h6 class="mb-3 text-primary">Chi tiết combo: ${combo.comboName}</h6>
-          <div class="row g-3">
-            ${
-              combo.detailTopCombos && combo.detailTopCombos.length > 0
-                ? combo.detailTopCombos
-                    .map(
-                      (dCbo) => `
-                        <div class="col-sm-12 col-md-6 col-lg-4">
-                          <div class="card h-100 shadow-sm border-0">
-                            <div class="card-body d-flex flex-column">
-                              <div class="d-flex align-items-center mb-3">
-                                <img src="${pathReplaceImg(undefined, 'HinhAnh/Products', dCbo.hinhAnh)}" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;" alt="Hình ảnh sản phẩm">
-                                <div>
-                                  <h5 class="card-title mb-0">Sản phẩm: ${dCbo.tenSanPham}</h5>
-                                  <p class="card-subtitle text-muted">Mã sản phẩm: ${dCbo.comboId}</p>
-                                </div>
-                              </div>
-                              <p class="mb-1"><strong>Số lượng:</strong> <span class="text-info">${dCbo.soLuong}</span></p>
-                              <p class="mb-1"><strong>Đơn giá:</strong> <span class="text-danger">${formatCurrency(dCbo.donGia)}</span></p>
-                            </div>
-                          </div>
-                        </div>
-                      `,
-                    )
-                    .join('')
-                : '<div class="col-12"><p class="text-center text-muted">Không có chi tiết sản phẩm trong combo này để hiển thị.</p></div>'
-            }
-          </div>
-        </div>`
+      const title = document.createElement('h6');
+      title.className = 'mb-3 text-primary';
+      title.textContent = `Chi tiết combo: ${combo.comboName}`;
+      container.appendChild(title);
 
-      div.html(orderDetailsHtml)
+      const row = document.createElement('div');
+      row.className = 'row g-3';
+      container.appendChild(row);
 
-      return div
+      if (combo.detailTopCombos && combo.detailTopCombos.length > 0) {
+        combo.detailTopCombos.forEach(dCbo => {
+          const col = document.createElement('div');
+          col.className = 'col-sm-12 col-md-6 col-lg-4';
+          
+          const cardContainer = document.createElement('div');
+          col.appendChild(cardContainer);
+          row.appendChild(col);
+
+          const app = createApp(DetailCard, {
+            title: `Sản phẩm: ${dCbo.tenSanPham}`,
+            subtitle: `Mã sản phẩm: ${dCbo.comboId}`,
+            imageSrc: pathReplaceImg(undefined, 'HinhAnh/Products', dCbo.hinhAnh),
+            imageAlt: 'Hình ảnh sản phẩm',
+            imageClass: 'rounded me-3',
+            details: [
+              { label: 'Số lượng', value: dCbo.soLuong, valueClass: 'text-info' },
+              { label: 'Đơn giá', value: formatCurrency(dCbo.donGia), valueClass: 'text-danger' }
+            ]
+          });
+          app.mount(cardContainer);
+        });
+      } else {
+        const noData = document.createElement('div');
+        noData.className = 'col-12';
+        noData.innerHTML = '<p class="text-center text-muted">Không có chi tiết sản phẩm trong combo này để hiển thị.</p>';
+        row.appendChild(noData);
+      }
+
+      return container;
     },
   },
 }

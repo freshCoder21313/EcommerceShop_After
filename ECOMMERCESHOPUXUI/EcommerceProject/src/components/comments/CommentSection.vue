@@ -183,6 +183,7 @@ const fetchComments = async () => {
       Swal.fire('Lỗi', 'Không thể tải được danh sách bình luận.', 'error');
     }
   } catch (error) {
+    console.log(error);
     Swal.fire('Lỗi', 'Đã xảy ra lỗi khi tải bình luận.', 'error');
   } finally {
     loading.value = false;

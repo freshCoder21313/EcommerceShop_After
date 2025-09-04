@@ -15,6 +15,7 @@ import pathReplaceImg from '@/utils/processPathImg' // eslint-disable-line no-un
 import NoDataMessage from '@/components/common/NoDataMessage.vue'
 import StarRating from '@/components/common/StarRating.vue';
 import { createApp } from 'vue';
+import DetailCard from '@/components/common/DetailCard.vue';
 
 export default {
   name: 'ProductTable',
@@ -96,57 +97,58 @@ export default {
       configsDt.attachSearchDebounce('#productDatatable', table)
     },
     formatDetails(productMap, rowData) {
-      const div = $('<div/>').addClass('loading').text('Loading...')
-      const detailProduct = productMap.get(rowData.productId)
+      const detailProduct = productMap.get(rowData.productId);
+      const container = document.createElement('div');
+      container.className = 'container-fluid p-3';
 
-      let detailsHtml = `
-        <div class="container-fluid p-3">
-          <h6 class="mb-3 text-primary">Chi tiết các biến thể: ${detailProduct.productName}</h6>`;
+      const title = document.createElement('h6');
+      title.className = 'mb-3 text-primary';
+      title.textContent = `Chi tiết các biến thể: ${detailProduct.productName}`;
+      container.appendChild(title);
+
+      const row = document.createElement('div');
+      row.className = 'row g-3';
+      container.appendChild(row);
 
       if (detailProduct.detailTopProducts && detailProduct.detailTopProducts.length > 0) {
-        detailsHtml += '<table class="table table-bordered table-sm">' +
-          '<thead class="table-light"><tr><th>Mã CTSP</th><th>Màu sắc</th><th>Kích thước</th><th>Đơn giá</th><th>Đánh giá</th></tr></thead>' +
-          '<tbody>';
-
         detailProduct.detailTopProducts.forEach(detail => {
-          const ratingPlaceholderId = `rating-variant-${detail.maCtsp}`;
-          detailsHtml += `<tr>
-                          <td>${detail.maCtsp}</td>
-                          <td>${detail.mauSac || '-'}</td>
-                          <td>${detail.kichThuoc || '-'}</td>
-                          <td>${this.formatCurrency(detail.donGia || 0)}</td>
-                          <td><div id="${ratingPlaceholderId}"></div></td>
-                        </tr>`;
-        });
+          const col = document.createElement('div');
+          col.className = 'col-sm-12 col-md-6 col-lg-4';
+          
+          const cardContainer = document.createElement('div');
+          col.appendChild(cardContainer);
+          row.appendChild(col);
 
-        detailsHtml += '</tbody></table>';
+          const app = createApp(DetailCard, {
+            title: `Mã CTSP: ${detail.maCtsp}`,
+            details: [
+              { label: 'Màu sắc', value: detail.mauSac || '-' },
+              { label: 'Kích thước', value: detail.kichThuoc || '-' },
+              { label: 'Đơn giá', value: this.formatCurrency(detail.donGia || 0) },
+              { label: 'Đánh giá', value: '', valueClass: 'd-none' } // Hide label, star rating will be mounted below
+            ]
+          });
+          const mountedApp = app.mount(cardContainer);
+
+          const ratingContainer = document.createElement('div');
+          mountedApp.$el.querySelector('.card-body').appendChild(ratingContainer);
+
+          const ratingApp = createApp(StarRating, {
+            rating: detail.soSao,
+            readOnly: true,
+            showRating: true,
+            starSize: 16
+          });
+          ratingApp.mount(ratingContainer);
+        });
       } else {
-        detailsHtml += '<p class="text-center text-muted">Không có biến thể nào để hiển thị.</p>';
+        const noData = document.createElement('div');
+        noData.className = 'col-12';
+        noData.innerHTML = '<p class="text-center text-muted">Không có biến thể nào để hiển thị.</p>';
+        row.appendChild(noData);
       }
 
-      detailsHtml += '</div>';
-      div.html(detailsHtml);
-
-      // Mount Vue components after HTML is in the DOM
-      this.$nextTick(() => {
-        if (detailProduct.detailTopProducts && detailProduct.detailTopProducts.length > 0) {
-          detailProduct.detailTopProducts.forEach(detail => {
-            const ratingPlaceholderId = `rating-variant-${detail.maCtsp}`;
-            const container = div.find(`#${ratingPlaceholderId}`).get(0);
-            if (container) {
-              const app = createApp(StarRating, {
-                rating: detail.soSao, // Use the corrected average rating for the variant
-                readOnly: true,
-                showRating: true,
-                starSize: 16
-              });
-              app.mount(container);
-            }
-          });
-        }
-      });
-
-      return div;
+      return container;
     },
   },
 }

@@ -13,6 +13,8 @@ import 'datatables.net-dt/css/dataTables.dataTables.css'
 import { formatCurrency } from '@/constants/formatCurrency'
 import pathReplaceImg from '@/utils/processPathImg'
 import NoDataMessage from '@/components/common/NoDataMessage.vue'
+import { createApp } from 'vue';
+import DetailCard from '@/components/common/DetailCard.vue';
 
 export default {
   name: 'EmployeeTable',
@@ -59,43 +61,50 @@ export default {
       configsDt.attachSearchDebounce('#employeeDatatable', table)
     },
     formatDetails(rowData) {
-      const div = $('<div/>').addClass('loading').text('Loading...')
-      const employee = this.employees.find((x) => x.employeeId == rowData.employeeId)
+      const employee = this.employees.find((x) => x.employeeId == rowData.employeeId);
+      const container = document.createElement('div');
+      container.className = 'container-fluid p-3';
 
-      const detailsHtml = `
-        <div class="container-fluid p-3">
-          <h6 class="mb-3 text-primary">Chi tiết đơn hàng gần đây của ${employee.employeeName}</h6>
-          <div class="row g-3">
-            ${
-              employee.orderRecents && employee.orderRecents.length > 0
-                ? employee.orderRecents
-                    .map(
-                      (order) => `
-                        <div class="col-sm-12 col-md-6 col-lg-4">
-                          <div class="card h-100 shadow-sm border-0">
-                            <div class="card-body d-flex flex-column">
-                              <div class="d-flex align-items-center mb-3">
-                                <img src="${pathReplaceImg(undefined, 'HinhAnh/Avatar/', order.avatar)}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;" alt="Nhân viên">
-                                <div>
-                                  <h5 class="card-title mb-0">Mã hóa đơn: ${order.maHd}</h5>
-                                  <p class="card-subtitle text-muted">${order.hoTen}</p>
-                                </div>
-                              </div>
-                              <p class="mb-1"><strong>Ngày tạo:</strong> ${order.ngayTao ? new Date(order.ngayTao).toLocaleDateString() : '-'}</p>
-                              <p class="mb-1"><strong>Trạng thái:</strong> <span class="badge ${order.isActive ? 'bg-success' : 'bg-danger'}">${order.tinhTrang}</span></p>
-                              <p class="mb-0"><strong>Địa chỉ nhận:</strong> <span title="${order.diaChiNhanHang}">${order.diaChiNhanHang}</span></p>
-                            </div>
-                          </div>
-                        </div>
-                      `,
-                    )
-                    .join('')
-                : '<div class="col-12"><p class="text-center text-muted">Không có đơn hàng nào để hiển thị.</p></div>'
-            }
-          </div>
-        </div>`
-      div.html(detailsHtml)
-      return div
+      const title = document.createElement('h6');
+      title.className = 'mb-3 text-primary';
+      title.textContent = `Chi tiết đơn hàng gần đây của ${employee.employeeName}`;
+      container.appendChild(title);
+
+      const row = document.createElement('div');
+      row.className = 'row g-3';
+      container.appendChild(row);
+
+      if (employee.orderRecents && employee.orderRecents.length > 0) {
+        employee.orderRecents.forEach(order => {
+          const col = document.createElement('div');
+          col.className = 'col-sm-12 col-md-6 col-lg-4';
+          
+          const cardContainer = document.createElement('div');
+          col.appendChild(cardContainer);
+          row.appendChild(col);
+
+          const app = createApp(DetailCard, {
+            title: `Mã hóa đơn: ${order.maHd}`,
+            subtitle: order.hoTen,
+            imageSrc: pathReplaceImg(undefined, 'HinhAnh/Avatar/', order.avatar),
+            imageAlt: 'Nhân viên',
+            imageClass: 'rounded-circle me-3',
+            details: [
+              { label: 'Ngày tạo', value: order.ngayTao ? new Date(order.ngayTao).toLocaleDateString() : '-' },
+              { label: 'Trạng thái', value: order.tinhTrang, valueClass: `badge ${order.isActive ? 'bg-success' : 'bg-danger'}` },
+              { label: 'Địa chỉ nhận', value: order.diaChiNhanHang }
+            ]
+          });
+          app.mount(cardContainer);
+        });
+      } else {
+        const noData = document.createElement('div');
+        noData.className = 'col-12';
+        noData.innerHTML = '<p class="text-center text-muted">Không có đơn hàng nào để hiển thị.</p>';
+        row.appendChild(noData);
+      }
+
+      return container;
     },
   },
 }
