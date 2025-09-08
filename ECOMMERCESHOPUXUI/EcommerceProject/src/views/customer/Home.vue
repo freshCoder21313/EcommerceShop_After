@@ -505,38 +505,36 @@ onMounted(() => {
         ">
         <div class="row">
           <div class="col-12">
-            <div class="banner__slider owl-carousel">
-              <div class="banner__item" style="margin-bottom: 160px">
-                <div class="banner__text">
-                  <span>Bộ Sưu Tập</span>
-                  <div class="col-xl-3 col-lg-2" style="width: 300px; margin-left: 430px">
-                    <svg viewBox="0 0 700 250" role="img"
-                      aria-label="Angel soft curvy logo with wings and animated gradient">
-                      <defs>
-                        <linearGradient id="start" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="20%" stop-color="#EC4E79">
-                            <animate attributeName="stop-color" values="#EC4E79; #ABA2B7; #5CCAE7; #ABA2B7; #EC4E79;"
-                              dur="6s" repeatCount="indefinite" />
-                          </stop>
-                          <stop offset="40%" stop-color="#ABA2B7">
-                            <animate attributeName="stop-color" values="#ABA2B7; #5CCAE7; #EC4E79; #5CCAE7; #ABA2B7;"
-                              dur="6s" repeatCount="indefinite" />
-                          </stop>
-                          <stop offset="55%" stop-color="#5CCAE7">
-                            <animate attributeName="stop-color" values="#5CCAE7; #ABA2B7; #EC4E79; #ABA2B7; #5CCAE7;"
-                              dur="6s" repeatCount="indefinite" />
-                          </stop>
-                        </linearGradient>
-                      </defs>
-                      <RouterLink to="/" style="text-decoration: none">
-                        <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" class="angel-text">
-                          Angel Fashion
-                        </text>
-                      </RouterLink>
-                    </svg>
-                  </div>
-                  <a href="/Shop" style="color: black; text-decoration: none">Mua ngay</a>
+            <div class="banner__item" style="margin-bottom: 160px">
+              <div class="banner__text">
+                <span>Bộ Sưu Tập</span>
+                <div class="col-xl-3 col-lg-2" style="width: 300px; margin-left: 430px">
+                  <svg viewBox="0 0 700 250" role="img"
+                    aria-label="Angel soft curvy logo with wings and animated gradient">
+                    <defs>
+                      <linearGradient id="start" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="20%" stop-color="#EC4E79">
+                          <animate attributeName="stop-color" values="#EC4E79; #ABA2B7; #5CCAE7; #ABA2B7; #EC4E79;"
+                            dur="6s" repeatCount="indefinite" />
+                        </stop>
+                        <stop offset="40%" stop-color="#ABA2B7">
+                          <animate attributeName="stop-color" values="#ABA2B7; #5CCAE7; #EC4E79; #5CCAE7; #ABA2B7;"
+                            dur="6s" repeatCount="indefinite" />
+                        </stop>
+                        <stop offset="55%" stop-color="#5CCAE7">
+                          <animate attributeName="stop-color" values="#5CCAE7; #ABA2B7; #EC4E79; #ABA2B7; #5CCAE7;"
+                            dur="6s" repeatCount="indefinite" />
+                        </stop>
+                      </linearGradient>
+                    </defs>
+                    <RouterLink to="/" style="text-decoration: none">
+                      <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" class="angel-text">
+                        Angel Fashion
+                      </text>
+                    </RouterLink>
+                  </svg>
                 </div>
+                <a href="/Shop" style="color: black; text-decoration: none">Mua ngay</a>
               </div>
             </div>
           </div>

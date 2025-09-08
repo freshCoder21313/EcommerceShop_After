@@ -38,7 +38,6 @@
     "lodash": "^4.17.21",
     "magnific-popup": "^1.2.0",
     "mixitup": "^3.3.2",
-    "owl.carousel": "^2.3.4",
     "pinia": "^3.0.2",
     "pinia-plugin-persistedstate": "^4.3.0",
     "slicknav": "^1.0.8",

@@ -1,9 +1,8 @@
 <script setup>
 import CompareStorageHelper from '@/models/dtos/expansionModels/compareObject'
 import ReviewProductCombo from '@/components/pages/customers/reviews/ReviewProductCombo.vue'
-import $ from 'jquery'
 import RecommendationProduct from '@/components/RecommendationProduct/RecommendationProduct.vue'
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GetApiUrl } from '@/constants/api'
 import { decodeToken, validateToken } from '@/services/authService'
@@ -376,47 +375,11 @@ onMounted(async () => {
     console.error('Error during component initialization:', error)
   } finally {
     overallLoading.value = false // Set overall loading to false after all fetches
-    // Initialize carousel
-    nextTick(() => {
-      const $carousel = $(".product__details__pic__slider")
-
-      if ($carousel.length === 0) {
-        console.warn('Carousel element not found in DOM')
-        return
-      }
-
-      if (typeof $carousel.owlCarousel !== 'function') {
-        console.error('owlCarousel is not a function. OwlCarousel not loaded')
-        return
-      }
-
-      const owl = $carousel.owlCarousel({
-        items: 1,
-        loop: true,
-        autoplay: false,
-        nav: false,
-        dots: true,
-        animateOut: 'fadeOut',
-        animateIn: 'fadeIn',
-      })
-
-      $('.pt').on('click', function () {
-        const index = $(this).index()
-        owl.trigger('to.owl.carousel', [index, 300])
-        currentImage.value = index + 1
-      })
-
-      owl.on('changed.owl.carousel', function (event) {
-        currentImage.value = event.item.index + 1 - event.item.count
-        if (currentImage.value < 1) currentImage.value += event.item.count
-      })
-    })
   }
 })
 
 const changeImage = (index) => {
   currentImage.value = index
-  $('.product__details__pic__slider').trigger('to.owl.carousel', [index - 1, 300])
 }
 
 const validateQuantity = () => {
